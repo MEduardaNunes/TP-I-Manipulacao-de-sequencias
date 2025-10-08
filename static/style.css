@@ -1,16 +1,28 @@
 body {
     font-family: Arial, sans-serif;
-    background-color: #00ab5e;
-    color: #363636;
+    background-color: #95eaff;
+    color: #3a3a3a;
     text-align: center;
     margin-top: 100px;
+    margin-bottom: 100px;
+    margin-left: 250px;
+    margin-right: 250px;
+    height: 100vh;
 }
 
-a {
+url {
     text-decoration: none;
-    color: #007bff;
+    color: #00c1f1;
 }
 
-a:hover {
+url:hover {
     text-decoration: underline;
+}
+
+.central {
+    background-color: #ffffff;
+    padding: 50px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    text-align: center;
 }
