@@ -13,6 +13,7 @@ body {
 url {
     text-decoration: none;
     color: #00c1f1;
+    cursor: pointer;
 }
 
 url:hover {
