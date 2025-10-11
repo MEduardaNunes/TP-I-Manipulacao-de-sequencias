@@ -21,3 +21,8 @@ if __name__ == '__main__':
     caminho_corpus = './bbc'
     
     indice = criar_indice(caminho_corpus)
+    
+    if indice:
+        indice.imprimir_arvore()
+    else:
+        print("FALHA: O índice não foi criado.")

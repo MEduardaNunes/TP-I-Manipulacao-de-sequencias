@@ -71,3 +71,24 @@ class TrieCompacta:
     
     def busca(self, palavra):
         return
+    
+    # linhas seguintes -> DEBUG
+    def imprimir_arvore(self):
+        print("--- Conteúdo da Trie ---")
+        if not self.raiz.filhos:
+            print("(A árvore está vazia)")
+            return
+        self._imprimir_recursivo(self.raiz, "")
+
+    def _imprimir_recursivo(self, no, prefixo_atual):
+        # A palavra completa até este nó é o prefixo acumulado + o segmento deste nó.
+        palavra_completa = prefixo_atual + no.segmento
+        
+        # Se este nó tiver uma lista_invertida, significa que ele representa o fim de uma palavra.
+        if no.lista_invertida:
+            # Imprime a palavra e a quantidade de documentos em que ela aparece.
+            print(f"- Palavra: '{palavra_completa}' | Encontrada em {len(no.lista_invertida)} documento(s)")
+
+        # Chama a recursão para todos os filhos deste nó.
+        for filho in no.filhos.values():
+            self._imprimir_recursivo(filho, palavra_completa)
