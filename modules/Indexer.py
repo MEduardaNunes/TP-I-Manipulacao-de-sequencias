@@ -1,5 +1,6 @@
 import os
 from TrieCompacta import TrieCompacta, No
+from .Utils import ListaLigada
 
 class Document:
     def __init__(self, categoria, doc_id, conteudo):
@@ -11,7 +12,7 @@ class Document:
         return f"Documento(id={self.doc_id}, categoria='{self.categoria}')"
     
 def ler_corpus(caminho_corpus):
-    documents = []
+    documents = ListaLigada()
         
     for categoria in os.listdir(caminho_corpus):
         caminho_categoria = os.path.join(caminho_corpus, categoria)
@@ -24,7 +25,7 @@ def ler_corpus(caminho_corpus):
                         with open(caminho_arquivo, 'r', encoding='latin-1') as f:
                             conteudo = f.read()
                         doc = Document(categoria, doc_id_num, conteudo)
-                        documents.append(doc)
+                        documents.adicionar(doc)
                     except Exception as e:
                         print(f"Erro ao ler o arquivo {caminho_arquivo}: {e}")
     
