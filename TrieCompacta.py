@@ -13,33 +13,6 @@ class Ocorrencia:
         self.numero = numero
         self.posicao = posicao
 
-    def menor_que(self, outra : 'Ocorrencia'):
-        """
-        Função de comparação de duas ocorrências.
-        
-        Parâmetros:
-            outra (No): segunda ocorrência a ser comparada.
-
-        Retorno:
-            True se self têm valor menor do que outra, ou False caso contrário.
-        """
-        if self.categoria < outra.categoria:
-            return True
-        elif self.categoria > outra.categoria:
-            return False
-        
-        else:
-            if self.numero < outra.numero:
-                return True
-            elif self.numero > outra.numero:
-                return False
-            
-            else:
-                if self.posicao < outra.posicao:
-                    return True
-                else:
-                    return False
-
 class No:
     """
     Representa um nó.
@@ -58,39 +31,21 @@ class No:
 
     def insere_filho(self, filho : 'No'):
         """
-        Insere um filho em um Nó em ordem alfabética do valor do Nó
+        Insere um filho em um Nó em ordem de leitura do valor do Nó
         
         Parâmetros:
             filho (No): nó filho a ser inserido.
         """
-
-        if not self.filhos:
-            self.filhos.append(filho)
-            return
-
-        for i, proximoNo in enumerate(self.filhos):
-            if filho.valor <= proximoNo.valor:
-                self.filhos.insert(i, filho)
-                return
             
         self.filhos.append(filho)
 
     def insere_ocorrencia(self, occorrencia : Ocorrencia):
         """
-        Insere uma ocorrência em um Nó, em ordem crescente da 3-tupla.
+        Insere uma ocorrência em um Nó, em ordem de entrada da 3-tupla.
         
         Parâmetros:
             ocorrencia (No): a ocorrência a ser inserida.
         """
-
-        if not self.ocorrencias:
-            self.ocorrencias.append(occorrencia)
-            return
-        
-        for i, proximaOcorrencia in enumerate(self.ocorrencias):
-            if occorrencia.menor_que(proximaOcorrencia):
-                self.ocorrencias.insert(i, occorrencia)
-                return
             
         self.ocorrencias.append(occorrencia)
 

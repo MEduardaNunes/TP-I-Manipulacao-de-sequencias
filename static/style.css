@@ -1,29 +1,145 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap');
+
+@font-face {
+    font-family: 'Tangkiwood';
+    src: url('Tangkiwood.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+}
+
 body {
-    font-family: Arial, sans-serif;
-    background-color: #95eaff;
+    font-family: 'DM Sans', sans-serif;
+    background-color: #ffffff;
     color: #3a3a3a;
-    text-align: center;
-    margin-top: 100px;
-    margin-bottom: 100px;
-    margin-left: 250px;
-    margin-right: 250px;
+    margin: 100px 250px;
     height: 100vh;
 }
 
-url {
+h1 {
+    font-family: 'Tangkiwood';
+    color: #4a0638;
+    font-size: 60px;
+    letter-spacing: 2px;
+}
+
+h3 {
+    font-family: 'Tangkiwood';
+    color: #ffffff;
+    font-size: 30px;
+    letter-spacing: 2px;
+}
+
+a {
     text-decoration: none;
-    color: #00c1f1;
     cursor: pointer;
 }
 
-url:hover {
-    text-decoration: underline;
+p {
+    margin-top: 20px; 
+    font-weight: bold;
+}
+
+input[type="text"] {
+    font-family: 'DM Sans', sans-serif;
+    padding: 10px;
+    font-size: 16px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    width: 300px;
+}
+
+button {
+    font-family: 'DM Sans', sans-serif;
+    padding: 10px 20px;
+    font-size: 16px;
+    border-radius: 5px;
+    border: none;
+    background-color: #4a0638;
+    color: white;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #2d0422;
 }
 
 .central {
-    background-color: #ffffff;
     padding: 50px;
-    border-radius: 10px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
     text-align: center;
+}
+
+.central a {
+    color: #4a0638;
+    text-decoration: underline;
+}
+
+.texto {
+    text-align: justify;
+    text-justify: inter-word;
+    white-space: pre-wrap;
+}
+
+.historico {
+    margin: 50px 200px;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    border-radius: 40px;
+    background-color: #4a0638;
+    color: #ffffff;
+}
+
+.historico ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+.historico a {
+    color: #ffffff;
+    text-decoration: underline;
+}
+
+.container {
+    font-size: 30px;
+    display: flex;
+    width: 200px;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 30px;
+}
+
+.container a {
+    border: none;
+    background: none;
+    cursor: pointer;
+    display: inline-block; 
+    color: #ffffff;
+    background-color: #4a0638;
+    border-radius: 20px;
+}
+
+.item button {
+    width: 90px;
+    height: 50px;
+    padding: 10px 0;
+    border-radius: 20px;
+    border: none;
+}
+
+.container:hover > :not(:hover) {
+    opacity: 0.4;
+    transform: scale(0.9);
+}
+
+.item {
+    flex: 1;
+    max-width: 150px;
+    transition: 0.35s;
+    text-align: center;
+}
+
+.item_historico {
+    text-decoration: underline;
+    color: #ffffff;
 }

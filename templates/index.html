@@ -1,21 +1,47 @@
 <!DOCTYPE html>
-
 <html lang="pt-br">
 
 <head>
     <meta charset="UTF-8">
-    <title>Máquina de Busca</title>
+    <title>Página inicial</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 
 <body>
-    <div class="central">
-        <h1>Máquina de Busca</h1>
+    <div class = "container">
+        <div class = "item">
+            <a href = "{{ url_for('home') }}">
+                <button id = "home"> Início </button>
+            </a>
+        </div>
+        
+        <div class = "item">
+            <button id = "botao-voltar" onclick = "window.history.back()"> Voltar </button>
+        </div>
 
-        <p>Realize consultas sobre o bando de dados de
-            <url href = "http://derekgreene.com/bbc/", target="_blank">Greene e Cunningham (2006)</url>.
+        <div class = "item">
+            <a href = "{{ url_for('historico') }}">
+                <button id = "historico"> Histórico </button>
+            </a>
+        </div>
+    </div>
+    
+    <div class="central">
+        <h1> Máquina de Busca </h1>
+
+        <p> Realize consultas sobre o bando de dados de
+            <a href = "http://derekgreene.com/bbc/" target="_blank"> Greene e Cunningham (2006)</a>.
         </p>
-        <p>Você pode realizar consultas de AND, OR e NOT sobre qualquer termo.</p>
+        <p> Você pode realizar consultas de AND, OR e NOT sobre qualquer termo. </p>
+
+        <form method = "POST">
+            <input type = "text" id = "mensagem" name = "mensagem" placeholder = "Insira sua busca aqui..." required>
+            <button type = "submit"> Buscar </button>
+        </form>
+
+        {% if resposta %}
+            <p class = "texto"> {{ resposta|replace('\n', '<br>')|safe }} </p>
+        {% endif %}
     </div>
 </body>
 </html>
