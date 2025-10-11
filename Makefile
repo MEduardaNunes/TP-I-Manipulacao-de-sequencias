@@ -15,12 +15,8 @@ run:
 
 debug_tree:
 	@echo "Indexando o corpus e salvando a árvore em 'arvore_completa.txt'..."
-	./$(VENV_DIR)/bin/python indexer.py > arvore_completa.txt
+	./$(VENV_DIR)/bin/python app.py > arvore_completa.txt 2>&1
 	@echo "Arquivo 'arvore_completa.txt' criado com sucesso!"
-
-index:
-	@echo "Executando o script de indexação..."
-	./$(VENV_DIR)/bin/python indexer.py
 
 clean:
 	@echo "--> Removendo ambiente virtual e arquivos de cache..."

@@ -84,11 +84,17 @@ class TrieCompacta:
         # A palavra completa até este nó é o prefixo acumulado + o segmento deste nó.
         palavra_completa = prefixo_atual + no.segmento
         
-        # Se este nó tiver uma lista_invertida, significa que ele representa o fim de uma palavra.
+        # Se este nó representa o fim de uma palavra...
         if no.lista_invertida:
-            # Imprime a palavra e a quantidade de documentos em que ela aparece.
-            print(f"- Palavra: '{palavra_completa}' | Encontrada em {len(no.lista_invertida)} documento(s)")
+            print(f"- Palavra: '{palavra_completa}'", flush=True)
+            
+            # ...itera sobre o dicionário da lista invertida para imprimir os detalhes.
+            for doc_id, info in no.lista_invertida.items():
+                freq = info['frequencia']
+                pos = info['primeira_posicao']
+                # A indentação aqui ajuda na legibilidade
+                print(f"    -> Doc: {doc_id} | Frequência: {freq} | Primeira Posição: {pos}", flush=True)
 
-        # Chama a recursão para todos os filhos deste nó.
-        for filho in no.filhos.values():
-            self._imprimir_recursivo(filho, palavra_completa)
+        # Continua a recursão para os filhos
+        for char_filho in sorted(no.filhos.keys()):
+            self._imprimir_recursivo(no.filhos[char_filho], palavra_completa)

@@ -1,5 +1,5 @@
 import os
-from .TrieCompacta import TrieCompacta, No
+from TrieCompacta import TrieCompacta, No
 
 class Document:
     def __init__(self, categoria, doc_id, conteudo):
@@ -12,7 +12,7 @@ class Document:
     
 def ler_corpus(caminho_corpus):
     documents = []
-    
+        
     for categoria in os.listdir(caminho_corpus):
         caminho_categoria = os.path.join(caminho_corpus, categoria)
         if os.path.isdir(caminho_categoria):
@@ -52,11 +52,16 @@ def processar_texto(texto): # chamada tanto para as querys quanto para os dados 
 def criar_indice(caminho_corpus):
     trie = TrieCompacta()
     
+    print("[DEBUG] Função 'criar_indice' iniciada. Chamando 'ler_corpus'...")
     documents = ler_corpus(caminho_corpus)
+    
+    if not documents:
+        print("[DEBUG] A lista de documentos está vazia. A indexação não pode continuar.")
+        return trie # Retorna a Trie vazia
     
     for doc in documents:
         doc_id_completo = f"{doc.categoria}/{doc.doc_id}"
-        print(f"Indexando documento: {doc_id_completo}") # pra debugar
+        print(f"Indexando documento: {doc_id_completo}", flush=True) # pra debugar
         
         palavras = processar_texto(doc.conteudo)
         for posicao, palavra in enumerate(palavras):
