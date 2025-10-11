@@ -1,6 +1,14 @@
 import os
-from TrieCompacta import TrieCompacta, No
+from TrieCompacta import TrieCompacta, No, Ocorrencia
 from .Utils import ListaLigada
+from enum import Enum
+
+class Categoria(Enum):
+    business = 1
+    entertainment = 2
+    politics = 3
+    sport = 4
+    tech = 5
 
 class Document:
     def __init__(self, categoria, doc_id, conteudo):
@@ -56,17 +64,28 @@ def criar_indice(caminho_corpus):
     print("[DEBUG] Função 'criar_indice' iniciada. Chamando 'ler_corpus'...")
     documents = ler_corpus(caminho_corpus)
     
-    if not documents:
+    if len(documents) == 0:
         print("[DEBUG] A lista de documentos está vazia. A indexação não pode continuar.")
-        return trie # Retorna a Trie vazia
+        return trie
     
     for doc in documents:
-        doc_id_completo = f"{doc.categoria}/{doc.doc_id}"
-        print(f"Indexando documento: {doc_id_completo}", flush=True) # pra debugar
+        print(f"Indexando documento: {doc.categoria}/{doc.doc_id}", flush=True)
         
         palavras = processar_texto(doc.conteudo)
         for posicao, palavra in enumerate(palavras):
-            trie.insere(palavra, doc_id_completo, posicao)
+            
+            # --- A LÓGICA CORRETA E FINAL ESTÁ AQUI ---
+
+            # 1. Converte os dados (sem mudança aqui)
+            categoria_int = Categoria[doc.categoria].value
+            numero_int = int(doc.doc_id)
+            
+            # 2. Cria a instância da classe Ocorrencia DIRETAMENTE com os argumentos.
+            #    Isso agora funciona porque o __init__ está correto.
+            nova_ocorrencia = Ocorrencia(categoria_int, numero_int, posicao)
+            
+            # 3. Passa o objeto para o método de inserção (sem mudança aqui)
+            trie.insere_palavra(palavra, nova_ocorrencia)
             
     return trie
     

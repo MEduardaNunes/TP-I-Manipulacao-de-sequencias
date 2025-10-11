@@ -1,100 +1,261 @@
+class Ocorrencia:
+    """
+    Representa uma ocorrência de uma palavra.
+    
+    Atributos:
+        categoria (int): valor da categoria, seguindo o enum definido no main.
+        numero (int): número do texto da categoria.
+        posicao (int): posicao no arquivo da primeira letra em que ocorre a palavra.
+    """
+
+    def __init__(self, categoria, numero, posicao):
+        self.categoria = categoria
+        self.numero = numero
+        self.posicao = posicao
+
+    def menor_que(self, outra : 'Ocorrencia'):
+        """
+        Função de comparação de duas ocorrências.
+        
+        Parâmetros:
+            outra (No): segunda ocorrência a ser comparada.
+
+        Retorno:
+            True se self têm valor menor do que outra, ou False caso contrário.
+        """
+        if self.categoria < outra.categoria:
+            return True
+        elif self.categoria > outra.categoria:
+            return False
+        
+        else:
+            if self.numero < outra.numero:
+                return True
+            elif self.numero > outra.numero:
+                return False
+            
+            else:
+                if self.posicao < outra.posicao:
+                    return True
+                else:
+                    return False
+
 class No:
-    def __init__(self, segmento=''):
-        self.segmento = segmento
-        self.filhos = {}
-        self.lista_invertida = {} 
-        # {id_documento : {'frequencia': X, 'primeira_posicao': Y}}
+    """
+    Representa um nó.
+    
+    Atributos:
+        valor (str): string contida no Nó
+        filhos (lista de No): Nós filhos desse nó.
+        ocorrencias (lista de Ocorrencia): 3-tuplas que indicam a seção,
+            o número do arquivo e a posição onde a palavra ocorreu.
+    """
+
+    def __init__(self, valor):
+        self.valor = valor
+        self.filhos = []
+        self.ocorrencias = []
+
+    def insere_filho(self, filho : 'No'):
+        """
+        Insere um filho em um Nó em ordem alfabética do valor do Nó
+        
+        Parâmetros:
+            filho (No): nó filho a ser inserido.
+        """
+
+        if not self.filhos:
+            self.filhos.append(filho)
+            return
+
+        for i, proximoNo in enumerate(self.filhos):
+            if filho.valor <= proximoNo.valor:
+                self.filhos.insert(i, filho)
+                return
+            
+        self.filhos.append(filho)
+
+    def insere_ocorrencia(self, occorrencia : Ocorrencia):
+        """
+        Insere uma ocorrência em um Nó, em ordem crescente da 3-tupla.
+        
+        Parâmetros:
+            ocorrencia (No): a ocorrência a ser inserida.
+        """
+
+        if not self.ocorrencias:
+            self.ocorrencias.append(occorrencia)
+            return
+        
+        for i, proximaOcorrencia in enumerate(self.ocorrencias):
+            if occorrencia.menor_que(proximaOcorrencia):
+                self.ocorrencias.insert(i, occorrencia)
+                return
+            
+        self.ocorrencias.append(occorrencia)
+
+def prefixo_comum(palavra_um, palavra_dois):
+    """
+    Retorna o maior prefixo em comum de duas palavras.
+        
+    Parâmetros:
+        palavra_um (string): primeira palavra.
+        palavra_dois (string): segunda palavra.
+
+    Retorno:
+        O prefixo em comum.
+    """
+
+    i = 0
+    while (i < len(palavra_um) and i < len(palavra_dois) and palavra_um[i] == palavra_dois[i]):
+        i = i + 1
+
+    return palavra_um[:i]
 
 class TrieCompacta:
-    def __init__(self):
-        # raiz da trie = nó vazio
-        self.raiz = No()
-
-    def insere(self, palavra, id_documento, posicao):
-        # insere uma palavra na trie e atualiza o índice
-        no_atual = self.raiz
-        palavra_restante = palavra
-        
-        while palavra_restante:
-            primeiro_char = palavra_restante[0]
-            
-            # não há nenhum filho que comece com o mesmo carcatere
-            if primeiro_char not in no_atual.filhos:
-                novo_no = No(segmento=palavra_restante)
-                no_atual.filhos[primeiro_char] = novo_no
-                self.atualiza_lista_invertida(novo_no, id_documento, posicao)
-                return
-            
-            # se existe um filho, compara com ele
-            filho = no_atual.filhos[primeiro_char]
-            segmento_filho = filho.segmento
-            
-            prefixo_comum = ""
-            for i in range(min(len(palavra_restante), len(segmento_filho))):
-                if palavra_restante[i] == segmento_filho[i]:
-                    prefixo_comum += palavra_restante[i]
-                else:
-                    break
-            
-            # o segmento do filho é prefixo da palavra restante -> continua a busca
-            if prefixo_comum == segmento_filho:
-                no_atual = filho
-                palavra_restante = palavra_restante[len(prefixo_comum):]
-            else: # o prefixo comum é menor que o segmento do filho -> precisa dividir
-                # um novo nó com o prefixo comum precisa ser criado
-                no_interno = No(segmento=prefixo_comum)
-
-                # o filho original vira filho do nó interno
-                filho.segmento = segmento_filho[len(prefixo_comum):]
-                no_interno.filhos[filho.segmento[0]] = filho
-                no_atual.filhos[primeiro_char] = no_interno
-                
-                resto_palavra_nova = palavra_restante[len(prefixo_comum):]
-                
-                if resto_palavra_nova:
-                    novo_no_folha = No(segmento=resto_palavra_nova)
-                    no_interno.filhos[resto_palavra_nova[0]] = novo_no_folha
-                    self.atualiza_lista_invertida(novo_no_folha, id_documento, posicao)
-                else:
-                    self.atualiza_lista_invertida(no_interno, id_documento, posicao)
-                return
-        self.atualiza_lista_invertida(no_atual, id_documento, posicao)
-        
-    def atualiza_lista_invertida(self, no, id_documento, posicao):
-        if id_documento in no.lista_invertida:
-            no.lista_invertida[id_documento]['frequencia'] += 1
-        else:
-            no.lista_invertida[id_documento] = {
-                'frequencia': 1,
-                'primeira_posicao': posicao
-            }
+    """
+    Representa uma Trie Compacta.
     
-    def busca(self, palavra):
-        return
+    Atributos:
+        raiz (No): nó raiz da árvore.
+    """
+
+    def __init__(self):
+        self.raiz = No("")
+
+    def insere_palavra(self, palavra, ocorrencia):
+        """
+        Insere uma palavra na árvore trie.
+            
+        Atributos:
+            palavra (string): palavra a ser inserida na trie.
+            ocorrencia (Ocorrencia): 3-tupla (categoria, número, posição) referente ao arquivo.
+        """
+
+        self.insere_no_recursivo(self.raiz, palavra, ocorrencia)
+    
+    def insere_no_recursivo(self, no, palavra, ocorrencia):
+        """
+        Insere uma palavra recursivamente na árvore trie.
+            
+        Atributos:
+            no (No): nó a ser verificado onde deve inserir a palavra.
+            palavra (string): palavra a ser inserida na trie.
+            ocorrencia (Ocorrencia): 3-tupla (categoria, número, posição) referente ao arquivo.
+        """
+
+        for filho in no.filhos:
+            prefixo = prefixo_comum(filho.valor, palavra)
+
+            # Se tem prefixo em comum
+            if prefixo:
+                # Se o prefixo em comum for exatamente o valor do filho
+                if prefixo == filho.valor:
+                    resto_palavra = palavra[len(prefixo):]
+
+                    # Se o prefixo é a palavra toda, insere ocorrencia em filho
+                    if resto_palavra == "":
+                        filho.insere_ocorrencia(ocorrencia)
+                        return
+                    
+                    # Se tiver resto, continua procurando recursivamente nesse nó
+                    self.insere_no_recursivo(filho, resto_palavra, ocorrencia)
+                    return
+
+                # Se o prefixo em comum não for todo o valor do filho, fazemos split
+                resto_filho = filho.valor[len(prefixo):]
+                resto_palavra = palavra[len(prefixo):]
+
+                novo_filho = No(resto_filho)
+                novo_filho.filhos = filho.filhos.copy()
+                novo_filho.ocorrencias = filho.ocorrencias.copy()
+
+                filho.valor = prefixo
+                filho.filhos = [novo_filho]
+                filho.ocorrencias = []
+
+                if resto_palavra:
+                    novo_filho_resto = No(resto_palavra)
+                    novo_filho_resto.insere_ocorrencia(ocorrencia)
+                    filho.insere_filho(novo_filho_resto)
+
+                else:
+                    filho.insere_ocorrencia(ocorrencia)
+
+                return
+
+        novo_no = No(palavra)
+        novo_no.insere_ocorrencia(ocorrencia)
+        no.insere_filho(novo_no)
+    
+    def busca_palavra(self, palavra):
+        """
+        Busca as recorrências de uma palavra na Trie, caso tenha.
+            
+        Atributos:
+            palavra (string): palavra a ser buscada na trie.
+        Retorno:
+            A lista de ocorrências da palavra ou a lista vazia, se ela não existe na trie.
+        """
+
+        return self.busca_no_recursivo(self.raiz, palavra)
+    
+    def busca_no_recursivo(self, no, palavra):
+        """
+        Busca as recorrências de uma palavra na Trie, caso tenha, recursivamente.
+            
+        Atributos:
+            palavra (string): palavra a ser buscada na trie.
+            no (No): o nó em que é buscada a palavra.
+        Retorno:
+            A lista de ocorrências da palavra ou a lista vazia, se ela não existe na trie.
+        """
+        for filho in no.filhos:
+            prefixo = prefixo_comum(palavra, filho.valor)
+
+            # Não tem prefixo em comum -> continua
+            if prefixo == "":
+                continue
+
+            # A palavra e a o valor de filhos são iguais -> palavra achada
+            if prefixo == palavra and prefixo == filho.valor:
+                return filho.ocorrencias
+            
+            elif prefixo == filho.valor and len(filho.valor) < len(palavra):
+                resto_palavra = palavra[len(prefixo):]
+                resultado = self.busca_no_recursivo(filho, resto_palavra)
+
+                if resultado:
+                    return resultado
+                
+            elif len(prefixo) < len(filho.valor):
+                return []
+
+        return []
+
     
     # linhas seguintes -> DEBUG
     def imprimir_arvore(self):
-        print("--- Conteúdo da Trie ---")
+        print("\n--- Conteúdo da Trie ---")
         if not self.raiz.filhos:
             print("(A árvore está vazia)")
             return
+        # A recursão começa na raiz, que tem um valor/prefixo vazio.
         self._imprimir_recursivo(self.raiz, "")
 
     def _imprimir_recursivo(self, no, prefixo_atual):
-        # A palavra completa até este nó é o prefixo acumulado + o segmento deste nó.
-        palavra_completa = prefixo_atual + no.segmento
+        palavra_completa = prefixo_atual + no.valor
         
-        # Se este nó representa o fim de uma palavra...
-        if no.lista_invertida:
-            print(f"- Palavra: '{palavra_completa}'", flush=True)
+        if no.ocorrencias:
+            print(f"- Palavra: '{palavra_completa}'")
             
-            # ...itera sobre o dicionário da lista invertida para imprimir os detalhes.
-            for doc_id, info in no.lista_invertida.items():
-                freq = info['frequencia']
-                pos = info['primeira_posicao']
-                # A indentação aqui ajuda na legibilidade
-                print(f"    -> Doc: {doc_id} | Frequência: {freq} | Primeira Posição: {pos}", flush=True)
+            for ocorrencia in no.ocorrencias:
+                # Acessa os atributos de cada objeto para imprimir os detalhes.
+                cat = ocorrencia.categoria
+                num = ocorrencia.numero
+                pos = ocorrencia.posicao
+                print(f"    -> Categoria: {cat}, Número: {num}, Posição: {pos}")
 
-        # Continua a recursão para os filhos
-        for char_filho in sorted(no.filhos.keys()):
-            self._imprimir_recursivo(no.filhos[char_filho], palavra_completa)
+        for filho in no.filhos:
+            # Passa a palavra completa atual como o prefixo para a próxima chamada.
+            self._imprimir_recursivo(filho, palavra_completa)

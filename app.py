@@ -2,15 +2,6 @@ from flask import Flask, render_template
 from modules.Indexer import criar_indice
 import os
 
-from enum import Enum
-
-class Categoria(Enum):
-    business = 1
-    entertainment = 2
-    politics = 3
-    sport = 4
-    tech = 5
-
 app = Flask(__name__)
 
 @app.route('/')
