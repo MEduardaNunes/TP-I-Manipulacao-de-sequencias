@@ -13,6 +13,11 @@ run:
 	@echo "Iniciando o servidor Flask... (Pressione Ctrl+C para parar)"
 	./$(VENV_DIR)/bin/python app.py
 
+debug_tree:
+	@echo "Indexando o corpus e salvando a árvore em 'arvore_completa.txt'..."
+	./$(VENV_DIR)/bin/python indexer.py > arvore_completa.txt
+	@echo "Arquivo 'arvore_completa.txt' criado com sucesso!"
+
 index:
 	@echo "Executando o script de indexação..."
 	./$(VENV_DIR)/bin/python indexer.py
