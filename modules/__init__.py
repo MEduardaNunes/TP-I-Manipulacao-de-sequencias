@@ -1,0 +1,1 @@
+from .Indexer import criar_indice

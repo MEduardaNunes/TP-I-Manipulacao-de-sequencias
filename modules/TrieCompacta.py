@@ -43,19 +43,20 @@ class TrieCompacta:
             else: # o prefixo comum é menor que o segmento do filho -> precisa dividir
                 # um novo nó com o prefixo comum precisa ser criado
                 no_interno = No(segmento=prefixo_comum)
-                
-                # o resto da palavra que vai ser inserida vira um novo nó
-                resto_palavra_nova = palavra_restante[len(prefixo_comum):]
-                novo_no_folha = No(segmento=resto_palavra_nova)
-                
+
                 # o filho original vira filho do nó interno
                 filho.segmento = segmento_filho[len(prefixo_comum):]
-                
-                no_atual.filhos[primeiro_char] = no_interno
-                no_interno.filhos[resto_palavra_nova[0]] = novo_no_folha
                 no_interno.filhos[filho.segmento[0]] = filho
+                no_atual.filhos[primeiro_char] = no_interno
                 
-                self.atualiza_lista_invertida(novo_no_folha, id_documento, posicao)
+                resto_palavra_nova = palavra_restante[len(prefixo_comum):]
+                
+                if resto_palavra_nova:
+                    novo_no_folha = No(segmento=resto_palavra_nova)
+                    no_interno.filhos[resto_palavra_nova[0]] = novo_no_folha
+                    self.atualiza_lista_invertida(novo_no_folha, id_documento, posicao)
+                else:
+                    self.atualiza_lista_invertida(no_interno, id_documento, posicao)
                 return
         self.atualiza_lista_invertida(no_atual, id_documento, posicao)
         
