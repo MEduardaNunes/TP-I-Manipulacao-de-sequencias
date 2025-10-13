@@ -1,18 +1,3 @@
-class Ocorrencia:
-    """
-    Representa uma ocorrência de uma palavra.
-    
-    Atributos:
-        categoria (int): valor da categoria, seguindo o enum definido no main.
-        numero (int): número do texto da categoria.
-        posicao (int): posicao no arquivo da primeira letra em que ocorre a palavra.
-    """
-
-    def __init__(self, categoria, numero, posicao):
-        self.categoria = categoria
-        self.numero = numero
-        self.posicao = posicao
-
 class No:
     """
     Representa um nó.
@@ -27,7 +12,7 @@ class No:
     def __init__(self, valor):
         self.valor = valor
         self.filhos = []
-        self.ocorrencias = []
+        self.lista_invertida = {}
 
     def insere_filho(self, filho : 'No'):
         """
@@ -39,15 +24,15 @@ class No:
             
         self.filhos.append(filho)
 
-    def insere_ocorrencia(self, occorrencia : Ocorrencia):
-        """
-        Insere uma ocorrência em um Nó, em ordem de entrada da 3-tupla.
-        
-        Parâmetros:
-            ocorrencia (No): a ocorrência a ser inserida.
-        """
-            
-        self.ocorrencias.append(occorrencia)
+    def insere_na_lista_invertida(self, chave, posicao):
+        if chave in self.lista_invertida:
+            self.lista_invertida[chave]["frequencia"] += 1
+
+        else:
+            self.lista_invertida[chave] = {
+                "frequencia": 1,
+                "primeira_posicao": posicao
+            }
 
 def prefixo_comum(palavra_um, palavra_dois):
     """
@@ -78,7 +63,7 @@ class TrieCompacta:
     def __init__(self):
         self.raiz = No("")
 
-    def insere_palavra(self, palavra, ocorrencia):
+    def insere_palavra(self, palavra, chave, posicao):
         """
         Insere uma palavra na árvore trie.
             
@@ -87,9 +72,9 @@ class TrieCompacta:
             ocorrencia (Ocorrencia): 3-tupla (categoria, número, posição) referente ao arquivo.
         """
 
-        self.insere_no_recursivo(self.raiz, palavra, ocorrencia)
+        self.insere_no_recursivo(self.raiz, palavra, chave, posicao)
     
-    def insere_no_recursivo(self, no, palavra, ocorrencia):
+    def insere_no_recursivo(self, no, palavra, chave, posicao):
         """
         Insere uma palavra recursivamente na árvore trie.
             
@@ -110,11 +95,11 @@ class TrieCompacta:
 
                     # Se o prefixo é a palavra toda, insere ocorrencia em filho
                     if resto_palavra == "":
-                        filho.insere_ocorrencia(ocorrencia)
+                        filho.insere_na_lista_invertida(chave, posicao)
                         return
                     
                     # Se tiver resto, continua procurando recursivamente nesse nó
-                    self.insere_no_recursivo(filho, resto_palavra, ocorrencia)
+                    self.insere_no_recursivo(filho, resto_palavra, chave, posicao)
                     return
 
                 # Se o prefixo em comum não for todo o valor do filho, fazemos split
@@ -131,16 +116,16 @@ class TrieCompacta:
 
                 if resto_palavra:
                     novo_filho_resto = No(resto_palavra)
-                    novo_filho_resto.insere_ocorrencia(ocorrencia)
+                    novo_filho_resto.insere_na_lista_invertida(chave, posicao)
                     filho.insere_filho(novo_filho_resto)
 
                 else:
-                    filho.insere_ocorrencia(ocorrencia)
+                    filho.insere_na_lista_invertida(chave, posicao)
 
                 return
 
         novo_no = No(palavra)
-        novo_no.insere_ocorrencia(ocorrencia)
+        novo_no.insere_na_lista_invertida(chave, posicao)
         no.insere_filho(novo_no)
     
     def busca_palavra(self, palavra):
@@ -174,7 +159,7 @@ class TrieCompacta:
 
             # A palavra e a o valor de filhos são iguais -> palavra achada
             if prefixo == palavra and prefixo == filho.valor:
-                return filho.ocorrencias
+                return filho.lista_invertida
             
             elif prefixo == filho.valor and len(filho.valor) < len(palavra):
                 resto_palavra = palavra[len(prefixo):]
