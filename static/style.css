@@ -91,7 +91,8 @@ button:hover {
 .historico ul {
     list-style-type: none;
     padding: 0;
-    margin: 0;
+    margin-top: 20px;
+    margin-bottom: 30px;
 }
 
 .historico a {
