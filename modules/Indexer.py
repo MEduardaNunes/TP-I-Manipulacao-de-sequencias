@@ -1,5 +1,5 @@
 import os
-from TrieCompacta import TrieCompacta, No, Ocorrencia
+from TrieCompacta import TrieCompacta, No
 from .Utils import ListaLigada
 from enum import Enum
 
@@ -82,10 +82,9 @@ def criar_indice(caminho_corpus):
             
             # 2. Cria a instância da classe Ocorrencia DIRETAMENTE com os argumentos.
             #    Isso agora funciona porque o __init__ está correto.
-            nova_ocorrencia = Ocorrencia(categoria_int, numero_int, posicao)
             
             # 3. Passa o objeto para o método de inserção (sem mudança aqui)
-            trie.insere_palavra(palavra, nova_ocorrencia)
+            trie.insere_palavra(palavra, (categoria_int, numero_int), posicao)
             
     return trie
     

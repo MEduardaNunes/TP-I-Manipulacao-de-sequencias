@@ -108,11 +108,11 @@ class TrieCompacta:
 
                 novo_filho = No(resto_filho)
                 novo_filho.filhos = filho.filhos.copy()
-                novo_filho.ocorrencias = filho.ocorrencias.copy()
+                novo_filho.lista_invertida = filho.lista_invertida.copy()
 
                 filho.valor = prefixo
                 filho.filhos = [novo_filho]
-                filho.ocorrencias = []
+                filho.lista_invertida = {}
 
                 if resto_palavra:
                     novo_filho_resto = No(resto_palavra)
@@ -186,15 +186,15 @@ class TrieCompacta:
     def _imprimir_recursivo(self, no, prefixo_atual):
         palavra_completa = prefixo_atual + no.valor
         
-        if no.ocorrencias:
+        if no.lista_invertida:
             print(f"- Palavra: '{palavra_completa}'")
             
-            for ocorrencia in no.ocorrencias:
+            for chave, dados in no.lista_invertida.items():
                 # Acessa os atributos de cada objeto para imprimir os detalhes.
-                cat = ocorrencia.categoria
-                num = ocorrencia.numero
-                pos = ocorrencia.posicao
-                print(f"    -> Categoria: {cat}, Número: {num}, Posição: {pos}")
+                cat, num = chave
+                freq = dados['frequencia']
+                pos = dados['primeira_posicao']
+                print(f"    -> Categoria: {cat}, Número: {num}, Frequência: {freq}, Posição: {pos}")
 
         for filho in no.filhos:
             # Passa a palavra completa atual como o prefixo para a próxima chamada.
