@@ -1,3 +1,20 @@
+def processar_texto(texto): # chamada tanto para as querys quanto para os dados da bbc
+    palavra_atual = ""
+    lista_de_palavras = []
+    texto_minusculo = texto.lower() + " "
+    
+    for caractere in texto_minusculo:
+        # verifica se o caractere é uma letra do alfabeto
+        if 'a' <= caractere <= 'z':
+            palavra_atual += caractere
+        else:
+            # se não for, é um separador
+            if palavra_atual: # verifica se a palavra atual não está vazia
+                lista_de_palavras.append(palavra_atual)
+                palavra_atual = "" # reseta para a próxima palavra
+
+    return lista_de_palavras
+
 class No:
     def __init__(self, valor=None):
         self.valor = valor
