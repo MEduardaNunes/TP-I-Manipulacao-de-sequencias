@@ -1,11 +1,39 @@
 from flask import Flask, render_template, request, session, redirect, url_for
-from modules.Indexer import criar_indice
+from modules.Indexer import Corpus 
+from modules.Models import Categoria
 import os
 
 app = Flask(__name__)
 app.secret_key = "senha_super_secreta"
 
 resposta = None
+corpus_index = None
+
+def inicializar_indice():
+    global corpus_index
+    caminho_indice_salvo = "data/indice.dat" 
+    
+    corpus_index = Corpus()
+    
+    if os.path.exists(caminho_indice_salvo) and corpus_index.carregar_de_disco(caminho_indice_salvo):
+        print("SUCESSO: O índice foi carregado do arquivo")
+    else:
+        caminho_relativo = './bbc'
+        caminho_corpus = os.path.abspath(os.path.join(os.path.dirname(__file__), caminho_relativo))
+
+        if not os.path.exists(caminho_corpus):
+            print(f"Diretório do corpus não encontrado em '{caminho_corpus}'")
+            return
+
+        corpus_index.construir_indice(caminho_corpus)
+        
+        if corpus_index.estatisticas_corpus:
+            print("\nSUCESSO: O índice foi criado e carregado na memória") # DEBUG
+            corpus_index.imprimir_estatisticas(limite=10)
+            os.makedirs(os.path.dirname(caminho_indice_salvo), exist_ok=True)
+            corpus_index.salvar_em_disco(caminho_indice_salvo)
+        else:
+            print("\nFALHA: O índice não pôde ser criado. Verifique os logs") # DEBUG
 
 @app.route('/', methods=['GET', 'POST'])
 def home():
@@ -53,17 +81,13 @@ def historico():
     return render_template('historico.html', resposta = resposta, historico = session['historico'])
 
 if __name__ == '__main__':
-    caminho_relativo = './bbc'
-    caminho_corpus = os.path.abspath(os.path.join(os.path.dirname(__file__), caminho_relativo))
+    inicializar_indice()
     
-    print(f"Caminho do corpus definido como: {caminho_corpus}")
-    
-    indice = criar_indice(caminho_corpus)
-    
-    if indice:
-        indice.imprimir_arvore()
-        print("\n--- SUCESSO: O índice foi criado e contém dados. ---")
+    if corpus_index and corpus_index.estatisticas_corpus:
+        mapa_reverso_categoria = {c.value: c.name for c in Categoria}
+        
+        corpus_index.trie.imprimir_arvore(mapa_categorias=mapa_reverso_categoria, limite=5)
     else:
-        print("FALHA: O índice não foi criado.")
+        print("FALHA: nao foi possível imprimir a árvore")
 
     app.run(debug=True)

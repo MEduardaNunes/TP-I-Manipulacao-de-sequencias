@@ -7,7 +7,7 @@ class Categoria(Enum):
     sport = 4
     tech = 5    
          
-class Document:
+class Documento:
     """Representa um documento do corpus, contendo seus metadados e conteúdo."""
     def __init__(self, categoria, doc_id, conteudo):
         """

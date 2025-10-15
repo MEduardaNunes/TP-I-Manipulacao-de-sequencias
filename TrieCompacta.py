@@ -174,28 +174,42 @@ class TrieCompacta:
         return []
 
     
-    # linhas seguintes -> DEBUG
-    def imprimir_arvore(self):
+    # DEBUG
+    def imprimir_arvore(self, mapa_categorias=None, limite=20):
         print("\n--- Conteúdo da Trie ---")
         if not self.raiz.filhos:
             print("(A árvore está vazia)")
             return
         # A recursão começa na raiz, que tem um valor/prefixo vazio.
-        self._imprimir_recursivo(self.raiz, "")
+        self._imprimir_recursivo(self.raiz, "", mapa_categorias, limite, {'count': 0})
 
-    def _imprimir_recursivo(self, no, prefixo_atual):
+    def _imprimir_recursivo(self, no, prefixo_atual, mapa_categorias, limite, contador):
+        # Para a impressão se o limite for atingido
+        if contador['count'] >= limite:
+            return
+
         palavra_completa = prefixo_atual + no.valor
         
         if no.lista_invertida:
             print(f"- Palavra: '{palavra_completa}'")
             
             for chave, dados in no.lista_invertida.items():
-                # Acessa os atributos de cada objeto para imprimir os detalhes.
-                cat, num = chave
-                freq = dados['frequencia']
-                pos = dados['primeira_posicao']
-                print(f"    -> Categoria: {cat}, Número: {num}, Frequência: {freq}, Posição: {pos}")
+                if contador['count'] >= limite:
+                    print("    -> (limite de impressão atingido)")
+                    return
+
+                cat_int, num_int = chave
+                freq = dados.get('frequencia', 'N/A') # Usar .get() para segurança
+                
+                categoria_str = str(cat_int)
+                if mapa_categorias and cat_int in mapa_categorias:
+                    categoria_str = mapa_categorias[cat_int]
+                
+                num_str = f"{num_int:03d}"
+                
+                print(f"    -> Documento: {categoria_str}/{num_str}, Frequência: {freq}")
+                contador['count'] += 1
 
         for filho in no.filhos:
-            # Passa a palavra completa atual como o prefixo para a próxima chamada.
-            self._imprimir_recursivo(filho, palavra_completa)
+            if contador['count'] < limite:
+                self._imprimir_recursivo(filho, palavra_completa, mapa_categorias, limite, contador)
