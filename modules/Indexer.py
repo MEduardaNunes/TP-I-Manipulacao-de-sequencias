@@ -9,7 +9,13 @@ class Categoria(Enum):
     politics = 3
     sport = 4
     tech = 5
-
+    
+class Indice:
+    def __init__(self):
+            self.trie = TrieCompacta()
+            self.estatisticas_corpus = {}  # {"termo": {"media": x, "desvio_padrao": y}}   
+         
+         
 class Document:
     def __init__(self, categoria, doc_id, conteudo):
         self.categoria = categoria
@@ -59,33 +65,28 @@ def processar_texto(texto): # chamada tanto para as querys quanto para os dados 
                                 
                     
 def criar_indice(caminho_corpus):
-    trie = TrieCompacta()
+    indice = Indice()
     
     print("[DEBUG] Função 'criar_indice' iniciada. Chamando 'ler_corpus'...")
     documents = ler_corpus(caminho_corpus)
     
     if len(documents) == 0:
         print("[DEBUG] A lista de documentos está vazia. A indexação não pode continuar.")
-        return trie
+        return indice.trie
+# para cada palavra
+    
     
     for doc in documents:
         print(f"Indexando documento: {doc.categoria}/{doc.doc_id}", flush=True)
         
-        palavras = processar_texto(doc.conteudo)
-        for posicao, palavra in enumerate(palavras):
-            
-            # --- A LÓGICA CORRETA E FINAL ESTÁ AQUI ---
+        termos = processar_texto(doc.conteudo)
+        for posicao, termo in enumerate(termos):
 
-            # 1. Converte os dados (sem mudança aqui)
             categoria_int = Categoria[doc.categoria].value
             numero_int = int(doc.doc_id)
             
-            # 2. Cria a instância da classe Ocorrencia DIRETAMENTE com os argumentos.
-            #    Isso agora funciona porque o __init__ está correto.
+            indice.trie.insere_palavra(termo, (categoria_int, numero_int), posicao)
             
-            # 3. Passa o objeto para o método de inserção (sem mudança aqui)
-            trie.insere_palavra(palavra, (categoria_int, numero_int), posicao)
-            
-    return trie
+    return indice.trie
     
-    
+   
