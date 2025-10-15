@@ -1,19 +1,29 @@
-def processar_texto(texto): # chamada tanto para as querys quanto para os dados da bbc
-    palavra_atual = ""
-    lista_de_palavras = []
+def processar_texto(texto):
+    """
+    Normaliza um texto: converte para minúsculas e extrai palavras e números,
+    removendo pontuações e outros caracteres.
+
+    Parâmetros:
+        texto (str): A string de entrada a ser processada.
+
+    Retorno:
+        Uma lista de strings, onde cada string é uma palavra normalizada.
+    """
+    termo_atual = ""
+    lista_de_termos = []
     texto_minusculo = texto.lower() + " "
     
     for caractere in texto_minusculo:
-        # verifica se o caractere é uma letra do alfabeto
-        if 'a' <= caractere <= 'z':
-            palavra_atual += caractere
+        # Verifica se o caractere é uma letra ou um número.
+        if caractere.isalnum():
+            termo_atual += caractere
         else:
-            # se não for, é um separador
-            if palavra_atual: # verifica se a palavra atual não está vazia
-                lista_de_palavras.append(palavra_atual)
-                palavra_atual = "" # reseta para a próxima palavra
+            # Se não for, é um separador
+            if termo_atual: # Verifica se o termo atual não está vazio
+                lista_de_termos.append(termo_atual)
+                termo_atual = "" # Reseta para o próximo termo
 
-    return lista_de_palavras
+    return lista_de_termos
 
 class No:
     def __init__(self, valor=None):
