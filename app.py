@@ -37,7 +37,7 @@ def inicializar_indice():
             print("\nFALHA: O índice não pôde ser criado. Verifique os logs") # DEBUG
 
 @app.route('/', methods=['GET', 'POST'])
-def home():
+def home(): # talvez receber como parametro um objeto da classe consulta e armazenar a query direto nele pra usar no main
     session.permanent = False
     if 'historico' not in session:
         session['historico'] = []
