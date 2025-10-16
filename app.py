@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, session, redirect, url_for
 from modules.indexer import Corpus 
+from modules.resultados import Resultados
 from modules.models import Categoria
 import os
 
