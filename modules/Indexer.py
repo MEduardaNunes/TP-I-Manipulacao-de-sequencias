@@ -1,6 +1,6 @@
 from TrieCompacta import TrieCompacta, No
-from .Utils import ListaLigada, processar_texto
-from .Models import Documento, Categoria
+from .utils import ListaLigada, processar_texto
+from .models import Documento, Categoria
 import os
 import math
 import re

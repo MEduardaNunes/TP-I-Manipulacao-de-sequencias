@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, session, redirect, url_for
-from modules.Indexer import Corpus 
-from modules.Models import Categoria
+from modules.indexer import Corpus 
+from modules.models import Categoria
 import os
 
 app = Flask(__name__)
