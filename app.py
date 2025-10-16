@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, session, redirect, url_for
-from modules.Indexer import Corpus 
-from modules.Models import Categoria
+from modules.indexer import Corpus 
+from modules.resultados import Resultados
+from modules.models import Categoria
 import os
 
 app = Flask(__name__)
@@ -36,7 +37,7 @@ def inicializar_indice():
             print("\nFALHA: O índice não pôde ser criado. Verifique os logs") # DEBUG
 
 @app.route('/', methods=['GET', 'POST'])
-def home():
+def home(): # talvez receber como parametro um objeto da classe consulta e armazenar a query direto nele pra usar no main
     session.permanent = False
     if 'historico' not in session:
         session['historico'] = []
