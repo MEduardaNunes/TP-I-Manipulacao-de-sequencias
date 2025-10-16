@@ -35,6 +35,7 @@ def inicializar_indice():
             corpus_index.salvar_em_disco(caminho_indice_salvo)
         else:
             print("\nFALHA: O índice não pôde ser criado. Verifique os logs") # DEBUG
+        
 
 @app.route('/', methods=['GET', 'POST'])
 def home(): # talvez receber como parametro um objeto da classe consulta e armazenar a query direto nele pra usar no main
@@ -83,6 +84,17 @@ def historico():
 
 if __name__ == '__main__':
     inicializar_indice()
+    
+    resultados = Resultados()
+    
+    # declara um objeto Consulta
+    # processa a consulta
+    # resultados = lista retornada pela função de busca na TrieCompacta
+    #lista_resultados
+    # chama a função pra processar o snippets
+    # chama a função de calcular relevancia
+    # chama a função pra ordenar pela relevancia
+    # mostra resultados
     
     if corpus_index and corpus_index.estatisticas_corpus:
         mapa_reverso_categoria = {c.value: c.name for c in Categoria}
