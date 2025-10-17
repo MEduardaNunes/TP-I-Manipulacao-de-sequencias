@@ -216,20 +216,3 @@ def realiza_consulta(query, trie_palavras : TrieCompacta, todos_documentos : set
     
     else:
         return set()
-
-def main():
-    trie = TrieCompacta()
-
-    trie.insere_palavra("gato", (1, 1), 5)
-    trie.insere_palavra("cachorro", (1, 2), 7)
-    trie.insere_palavra("peixe", (1, 3), 2)
-    trie.insere_palavra("pássaro", (1, 4), 1)
-
-    todos_documentos = {(1, 1), (1, 2), (1, 3), (1, 4)}
-
-    consulta = "gato"
-    resultado = realiza_consulta(consulta, trie, todos_documentos)
-    print(resultado)
-
-if __name__ == "__main__":
-    main()
