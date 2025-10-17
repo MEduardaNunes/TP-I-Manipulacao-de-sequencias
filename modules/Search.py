@@ -7,7 +7,7 @@
 # <subexp>      := "(" <exp> ")" | <palavra> 
 # <palavra>     := <letra> (<letra> | <digito>)*  
 
-# <letra>       := "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m" | "n" | "o" | "p" | "q" | "r" | "s" | "t" | "u" | "v" | "w" | "x" | "y" | "z" | "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J" | "K" | "L" | "M" | "N" | "O" | "P" | "Q" | "R" | "S" | "T" | "U" | "V" | "W" | "X" | "Y" | "Z"
+# <letra>       := "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m" | "n" | "o" | "p" | "q" | "r" | "s" | "t" | "u" | "v" | "w" | "x" | "y" | "z"
 # <digito>      := "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
 import sys
 import os
@@ -52,7 +52,7 @@ class ArvoreParsing:
     def consome_token(self, esperado = ''):
         token = self.token_atual()
 
-        if token == None:
+        if token is None:
             print(f"ERRO: fim inesperado de tokens, esperado \" {esperado} \"")
 
         if esperado and token != esperado:
@@ -66,15 +66,19 @@ class ArvoreParsing:
     
     def parse_or(self):
         no_atual = self.parse_and()
-        if no_atual == None:
+        if no_atual is None:
             return None
         
         while self.token_atual() == "OR":
             self.consome_token("OR")
 
             no_direita = self.parse_and()
-            if no_direita == None:
+            if no_direita is None:
                 print("ERRO: não existe expressão esperada após OR")
+                return None
+            
+            if no_atual is None:
+                print("ERRO: não existe expressão esperada antes de OR")
                 return None
             
             no_atual = NoParsing("OR", no_atual, no_direita)
@@ -83,15 +87,19 @@ class ArvoreParsing:
     
     def parse_and(self):
         no_atual = self.parse_not()
-        if no_atual == None:
+        if no_atual is None:
             return None
 
         while self.token_atual() == "AND":
             self.consome_token("AND")
 
             no_direita = self.parse_not()
-            if no_direita == None:
+            if no_direita is None:
                 print("ERRO: não existe expressão esperada após AND")
+                return None
+            
+            if no_atual is None:
+                print("ERRO: não existe expressão esperada antes de AND")
                 return None
 
             no_atual = NoParsing("AND", no_atual, no_direita)
@@ -101,12 +109,12 @@ class ArvoreParsing:
     def parse_not(self):
         if self.token_atual() == "NOT":
             self.consome_token("NOT")
-            if self.token_atual == None:
+            if self.token_atual is None:
                 print("ERRO: não existe expressão esperada após NOT")
                 return None
             
             no_direita = self.parse_not()
-            if no_direita == None:
+            if no_direita is None:
                 print("ERRO: não existe expressão esperada após NOT")
                 return None
             
@@ -118,12 +126,26 @@ class ArvoreParsing:
     def parse_subexp(self):
         if self.token_atual() == "(":
             self.consome_token("(")
+
+            if self.token_atual() == ")":
+                print("ERRO: parênteses vazio")
+                return None
+
             no_atual = self.parse_exp()
+
+            if no_atual is None:
+                print("ERRO: expressão do parênteses não existe")
+                return None
+            
+            if self.token_atual() != ")":
+                print("ERRO: falta de parênteses fechando a expressão")
+                return None
+
             self.consome_token(")")
 
             return no_atual
         
-        elif re.match(r'[A-Za-z][A-Za-z0-9]*', self.token_atual() or ""):
+        elif re.match(r'[a-z][a-z0-9]*', self.token_atual() or ""):
             palavra = self.consome_token()
             return NoParsing(palavra)
         
@@ -131,15 +153,32 @@ class ArvoreParsing:
             print(f"ERRO: Token inesperado \" {self.token_atual()} \"")
     
     def gera_parsing_tokens(self):
+        if not self.tokens:
+            print("ERRO: expressão vazia")
+            return None
+        
         self.arvore = self.parse_exp()
+
+        if self.arvore is None:
+            print("ERRO: parsing falhou, expressão incompleta ou inválida")
 
         if self.pos < len(self.tokens):
             print("ERRO: tokens não consumidos")
             self.arvore = None
 
         return self.arvore
+    
+    def arvore_eh_valida(self):
+        if self.arvore is None:
+            return False
+        
+        else:
+            return not tem_no_invalido(self.arvore)
 
 def processa_arvore_booleana(no : NoParsing, trie_palavras: TrieCompacta, todos_arquivos : set):
+    if no is None:
+        return set()
+    
     if no.operador == "AND":
         return (processa_arvore_booleana(no.esquerda, trie_palavras, todos_arquivos) 
                 & processa_arvore_booleana(no.direita, trie_palavras, todos_arquivos))
@@ -155,7 +194,29 @@ def processa_arvore_booleana(no : NoParsing, trie_palavras: TrieCompacta, todos_
         palavra = no.operador
         lista_invertida_palavra = trie_palavras.busca_palavra(palavra)
         return set(lista_invertida_palavra.keys()) if lista_invertida_palavra else set()
+
+def tem_no_invalido(no):
+    if no is None:
+        return True
     
+    if no.operador in ("AND", "OR"):
+        return tem_no_invalido(no.esquerda) or tem_no_invalido(no.direita)
+    
+    if no.operador == "NOT":
+        return tem_no_invalido(no.direita)
+    
+    return False
+
+def realiza_consulta(query, trie_palavras : TrieCompacta, todos_documentos : set):
+    parser = ArvoreParsing(query)
+    arvore = parser.gera_parsing_tokens()
+
+    if parser.arvore_eh_valida():
+        return processa_arvore_booleana(arvore, trie_palavras, todos_documentos)
+    
+    else:
+        return set()
+
 def main():
     trie = TrieCompacta()
 
@@ -166,25 +227,9 @@ def main():
 
     todos_documentos = {(1, 1), (1, 2), (1, 3), (1, 4)}
 
-    consulta = "gato AND NOT cachorro"
-    print(f"\nConsulta: {consulta}")
-
-    parser = ArvoreParsing(consulta)
-    arvore = parser.gera_parsing_tokens()
-    if arvore == None:
-        print("ERRO: erro de sintaxe")
-
-    else :
-        print(f"\nÁrvore sintática: {arvore}")
-        resultado = processa_arvore_booleana(arvore, trie, todos_documentos)
-        if resultado == set():
-            print("\nNenhum documento satisfaz a consulta")
-
-        else:
-            print("\nDocumentos que satisfazem a consulta:")
-            for doc in sorted(resultado):
-                print(" ", doc)
-
+    consulta = "gato"
+    resultado = realiza_consulta(consulta, trie, todos_documentos)
+    print(resultado)
 
 if __name__ == "__main__":
     main()
