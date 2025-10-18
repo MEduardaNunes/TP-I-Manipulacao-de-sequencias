@@ -1,4 +1,4 @@
-from TrieCompacta import TrieCompacta, No
+from TrieCompacta import TrieCompacta, NoTrie
 from .utils import ListaLigada, processar_texto
 from .models import Documento, Categoria
 import os

@@ -1,3 +1,5 @@
+import re
+
 def processar_texto(texto):
     """
     Normaliza um texto: converte para minúsculas e extrai palavras e números,
@@ -24,6 +26,33 @@ def processar_texto(texto):
                 termo_atual = "" # Reseta para o próximo termo
 
     return lista_de_termos
+
+def normaliza_query(query):
+    """
+    Normaliza a query, convertando palavras para minúsculo (com exceção os operadores),
+    tira apóstofres possesivos (como Carl's -> Carl) e remove qualquer outro símbolo que
+    não pertença à gramática da consulta.
+
+    Parâmetros:
+        query (str): A string a ser processada.
+
+    Retorno:
+        A string normalizada.
+    """
+    query_normalizada = ""
+    palavras_query = query.replace('(', ' ( ').replace(')', ' ) ').split()
+
+    for palavra in palavras_query:
+        if palavra in ("AND", "OR", "NOT", "(", ")"):
+            query_normalizada += palavra + " "
+
+        else:
+            palavra = re.sub(r"['’]s$", "", palavra)
+            palavra_alfanumerica = re.sub(r'[^a-zA-Z0-9]', "", palavra) 
+            if palavra_alfanumerica:
+                query_normalizada += palavra_alfanumerica.lower() + " "
+
+    return query_normalizada.strip()
 
 class No:
     def __init__(self, valor=None):

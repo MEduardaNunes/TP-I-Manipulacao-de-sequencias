@@ -1,10 +1,10 @@
-class No:
+class NoTrie:
     """
-    Representa um nó.
+    Representa um nó da Trie.
     
     Atributos:
         valor (str): string contida no Nó
-        filhos (lista de No): Nós filhos desse nó.
+        filhos (lista de NoTrie): Nós filhos desse nó.
         ocorrencias (lista de Ocorrencia): 3-tuplas que indicam a seção,
             o número do arquivo e a posição onde a palavra ocorreu.
     """
@@ -14,12 +14,12 @@ class No:
         self.filhos = []
         self.lista_invertida = {}
 
-    def insere_filho(self, filho : 'No'):
+    def insere_filho(self, filho : 'NoTrie'):
         """
         Insere um filho em um Nó em ordem de leitura do valor do Nó
         
         Parâmetros:
-            filho (No): nó filho a ser inserido.
+            filho (NoTrie): nó filho a ser inserido.
         """
             
         self.filhos.append(filho)
@@ -46,6 +46,9 @@ def prefixo_comum(palavra_um, palavra_dois):
         O prefixo em comum.
     """
 
+    if palavra_um is None or palavra_dois is None:
+        return ""
+
     i = 0
     while (i < len(palavra_um) and i < len(palavra_dois) and palavra_um[i] == palavra_dois[i]):
         i = i + 1
@@ -61,7 +64,7 @@ class TrieCompacta:
     """
 
     def __init__(self):
-        self.raiz = No("")
+        self.raiz = NoTrie("")
 
     def insere_palavra(self, palavra, chave, posicao):
         """
@@ -106,7 +109,7 @@ class TrieCompacta:
                 resto_filho = filho.valor[len(prefixo):]
                 resto_palavra = palavra[len(prefixo):]
 
-                novo_filho = No(resto_filho)
+                novo_filho = NoTrie(resto_filho)
                 novo_filho.filhos = filho.filhos.copy()
                 novo_filho.lista_invertida = filho.lista_invertida.copy()
 
@@ -115,7 +118,7 @@ class TrieCompacta:
                 filho.lista_invertida = {}
 
                 if resto_palavra:
-                    novo_filho_resto = No(resto_palavra)
+                    novo_filho_resto = NoTrie(resto_palavra)
                     novo_filho_resto.insere_na_lista_invertida(chave, posicao)
                     filho.insere_filho(novo_filho_resto)
 
@@ -124,7 +127,7 @@ class TrieCompacta:
 
                 return
 
-        novo_no = No(palavra)
+        novo_no = NoTrie(palavra)
         novo_no.insere_na_lista_invertida(chave, posicao)
         no.insere_filho(novo_no)
     
@@ -146,44 +149,66 @@ class TrieCompacta:
             
         Atributos:
             palavra (string): palavra a ser buscada na trie.
-            no (No): o nó em que é buscada a palavra.
+            no (NoTrie): o nó em que é buscada a palavra.
         Retorno:
             A lista de ocorrências da palavra ou a lista vazia, se ela não existe na trie.
         """
         for filho in no.filhos:
             prefixo = prefixo_comum(palavra, filho.valor)
 
-            # Não tem prefixo em comum -> continua
+            # Não tem prefixo em comum, então continua
             if prefixo == "":
                 continue
 
-            # A palavra e a o valor de filhos são iguais -> palavra achada
+            # A palavra e a o valor de filhos são iguais, então palavra foi achada
             if prefixo == palavra and prefixo == filho.valor:
                 return filho.lista_invertida
             
+            # A palavra ainda não foi totalmente encontrada, então busca recursivamente
+            # No filho o restante da palavra
             elif prefixo == filho.valor and len(filho.valor) < len(palavra):
                 resto_palavra = palavra[len(prefixo):]
                 resultado = self.busca_no_recursivo(filho, resto_palavra)
 
                 if resultado:
                     return resultado
-                
+            
+            # Sobrou um sufixo na palavra, então palavra não foi achada
             elif len(prefixo) < len(filho.valor):
-                return []
+                return {}
 
-        return []
-
+        return {}
     
     # DEBUG
-    def imprimir_arvore(self, mapa_categorias=None, limite=20):
+    def imprimir_arvore(self, mapa_categorias = None, limite = 20):
+        """
+        Imprime a Trie Compacta a partir da raiz.
+            
+        Atributos:
+            mapa_categorias (map): enumeração que traduz um número para uma categoria.
+            limite (int): limite de nós a serem impressos.
+        """
+         
         print("\n--- Conteúdo da Trie ---")
+        
         if not self.raiz.filhos:
             print("(A árvore está vazia)")
             return
+        
         # A recursão começa na raiz, que tem um valor/prefixo vazio.
         self._imprimir_recursivo(self.raiz, "", mapa_categorias, limite, {'count': 0})
 
     def _imprimir_recursivo(self, no, prefixo_atual, mapa_categorias, limite, contador):
+        """
+        Imprime a Trie Compacta recursivamente a partir de um nó.
+            
+        Atributos:
+            no (NoTrie): o nó que será impresso.
+            mapa_categorias (map): enumeração que traduz um número para uma categoria.
+            limite (int): limite de nós a serem impressos.
+            contador (dict): dicionário que armazena contador das impressões. 
+        """
+
         # Para a impressão se o limite for atingido
         if contador['count'] >= limite:
             return
