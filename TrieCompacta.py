@@ -3,10 +3,12 @@ class NoTrie:
     Representa um nó da Trie.
     
     Atributos:
-        valor (str): string contida no Nó
-        filhos (lista de NoTrie): Nós filhos desse nó.
-        ocorrencias (lista de Ocorrencia): 3-tuplas que indicam a seção,
-            o número do arquivo e a posição onde a palavra ocorreu.
+        valor (str): string contida no nó
+        filhos (list[NoTrie]): Nós filhos desse nó.
+        lista_invertida (dict[tuple[int, int], dict[str, int]]): dicionário 
+            que mapeia uma chave (seção, número) que indica o documento e 
+            associa à frequência de ocorrência de uma palavra no documento
+            e à primeira ocorrência dessa palavra.
     """
 
     def __init__(self, valor):
@@ -16,7 +18,7 @@ class NoTrie:
 
     def insere_filho(self, filho : 'NoTrie'):
         """
-        Insere um filho em um Nó em ordem de leitura do valor do Nó
+        Insere um nó filho em ordem de leitura.
         
         Parâmetros:
             filho (NoTrie): nó filho a ser inserido.
@@ -25,6 +27,13 @@ class NoTrie:
         self.filhos.append(filho)
 
     def insere_na_lista_invertida(self, chave, posicao):
+        """
+        Atualiza a lista_invertida de um nó com uma nova ocorrência.
+        
+        Parâmetros:
+            chave (tuple[int, int]): tupla (seção, número) de um documento.
+            posicao (int): posição dentro do documento da palavra.
+        """
         if chave in self.lista_invertida:
             self.lista_invertida[chave]["frequencia"] += 1
 
@@ -42,7 +51,7 @@ def prefixo_comum(palavra_um, palavra_dois):
         palavra_um (string): primeira palavra.
         palavra_dois (string): segunda palavra.
 
-    Retorno:
+    Retorna:
         O prefixo em comum.
     """
 
@@ -60,7 +69,7 @@ class TrieCompacta:
     Representa uma Trie Compacta.
     
     Atributos:
-        raiz (No): nó raiz da árvore.
+        raiz (NoTrie): nó raiz da árvore.
     """
 
     def __init__(self):
@@ -70,7 +79,7 @@ class TrieCompacta:
         """
         Insere uma palavra na árvore trie.
             
-        Atributos:
+        Parâmetros:
             palavra (string): palavra a ser inserida na trie.
             ocorrencia (Ocorrencia): 3-tupla (categoria, número, posição) referente ao arquivo.
         """
@@ -79,9 +88,9 @@ class TrieCompacta:
     
     def insere_no_recursivo(self, no, palavra, chave, posicao):
         """
-        Insere uma palavra recursivamente na árvore trie.
+        Insere recursivamente uma palavra a partir de um nó.
             
-        Atributos:
+        Parâmetros:
             no (No): nó a ser verificado onde deve inserir a palavra.
             palavra (string): palavra a ser inserida na trie.
             ocorrencia (Ocorrencia): 3-tupla (categoria, número, posição) referente ao arquivo.
@@ -101,7 +110,7 @@ class TrieCompacta:
                         filho.insere_na_lista_invertida(chave, posicao)
                         return
                     
-                    # Se tiver resto, continua procurando recursivamente nesse nó
+                    # Continua inserindo o restante da paavra em nó filho
                     self.insere_no_recursivo(filho, resto_palavra, chave, posicao)
                     return
 
@@ -127,17 +136,19 @@ class TrieCompacta:
 
                 return
 
+        # Caso não tenha prefixo comum com nenhum filho, cria novo nó
         novo_no = NoTrie(palavra)
         novo_no.insere_na_lista_invertida(chave, posicao)
         no.insere_filho(novo_no)
     
     def busca_palavra(self, palavra):
         """
-        Busca as recorrências de uma palavra na Trie, caso tenha.
+        Busca as ocorrências de uma palavra na Trie, caso tenha.
             
-        Atributos:
+        Parâmetros:
             palavra (string): palavra a ser buscada na trie.
-        Retorno:
+
+        Retorna:
             A lista de ocorrências da palavra ou a lista vazia, se ela não existe na trie.
         """
 
@@ -145,12 +156,13 @@ class TrieCompacta:
     
     def busca_no_recursivo(self, no, palavra):
         """
-        Busca as recorrências de uma palavra na Trie, caso tenha, recursivamente.
+        Busca as ocorrências de uma palavra na Trie, caso tenha, recursivamente.
             
-        Atributos:
+        Parâmetros:
             palavra (string): palavra a ser buscada na trie.
             no (NoTrie): o nó em que é buscada a palavra.
-        Retorno:
+
+        Retorna:
             A lista de ocorrências da palavra ou a lista vazia, se ela não existe na trie.
         """
         for filho in no.filhos:
@@ -173,18 +185,17 @@ class TrieCompacta:
                 if resultado:
                     return resultado
             
-            # Sobrou um sufixo na palavra, então palavra não foi achada
+            # O prefixo não cobre toda a palavra; palavra não encontrada na Trie
             elif len(prefixo) < len(filho.valor):
                 return {}
 
         return {}
     
-    # DEBUG
     def imprimir_arvore(self, mapa_categorias = None, limite = 20):
         """
         Imprime a Trie Compacta a partir da raiz.
             
-        Atributos:
+        Parâmetros:
             mapa_categorias (map): enumeração que traduz um número para uma categoria.
             limite (int): limite de nós a serem impressos.
         """
@@ -202,8 +213,9 @@ class TrieCompacta:
         """
         Imprime a Trie Compacta recursivamente a partir de um nó.
             
-        Atributos:
+        Parâmetros:
             no (NoTrie): o nó que será impresso.
+            prefixo_atual (str): prefixo acumulado até o nó atual.
             mapa_categorias (map): enumeração que traduz um número para uma categoria.
             limite (int): limite de nós a serem impressos.
             contador (dict): dicionário que armazena contador das impressões. 
