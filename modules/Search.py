@@ -1,4 +1,4 @@
-""" Módulo de Recuperação de Informação (RI)
+"""Módulo de Recuperação de Informação (RI)
 
     A gramática utilizada para processar uma consulta é a seguinte:
         <exp>         ::= <exp_or>                  
@@ -29,10 +29,10 @@ class NoParsing:
         direita (NoParsing): filho à direita do nó.
         esquerda (NoParsing): filho à esquerda do nó.
     """
-    def __init__(self, op, dir = None, esq = None):
-        self.operador = op
-        self.direita = dir
-        self.esquerda = esq
+    def __init__(self, operador, direita = None, esquerda = None):
+        self.operador = operador
+        self.direita = direita
+        self.esquerda = esquerda
 
     def __repr__(self):
         if self.operador in ("AND", "OR"):
@@ -52,7 +52,7 @@ class ArvoreParsing:
     Atributos:
         query (str): string que representa a consulta a ser realizada.
         tokens (lista de str): lista dos tokens gerados a partir da query.
-        raiz (NoTrie): armazena a raíz da árvore de parsing.
+        raiz (NoParsing): armazena a raiz da árvore de parsing.
     """
     def __init__(self, query = ""):
         self.query = query
@@ -64,9 +64,10 @@ class ArvoreParsing:
         """
         Gera lista de tokens a partir da query da árvore.
         
-        Retorno:
+        Retorna:
             A lista de tokens gerada a partir da query.
         """ 
+        query_normalizada = normaliza_query(self.query)
         query_normalizada = self.query.replace('(', ' ( ').replace(')', ' ) ')
         return query_normalizada.split()
 
@@ -74,7 +75,7 @@ class ArvoreParsing:
         """
         Retorna o token atual que está sendo processado.
         
-        Retorno:
+        Retorna:
             O token atual ou None, caso todos tenham sido processados.
         """
         if self.pos < len(self.tokens):
@@ -84,10 +85,13 @@ class ArvoreParsing:
 
     def consome_token(self, esperado = ''):
         """
-        Verifica se o token é igual ao esperado e se for, o consome partindo
-        para o próximo token, e retorna o token consumido.
+        Consome o token atual, verificando se o token é igual ao esperado (se fornecido).
+        Caso o token não corresponda ao esperado, lança ValueError.
+
+        Parâmetros:
+            esperado (str): token esperado a ser consumido.
         
-        Retorno:
+        Retorna:
             O token consumido.
         """
         token = self.token_atual()
@@ -109,9 +113,10 @@ class ArvoreParsing:
     
     def parse_exp(self):
         """
-        Representação da regra de <exp>.
+        Representação da regra de <exp>, sendo ela
+            <exp> ::= <exp_or>
         
-        Retorno:
+        Retorna:
             O nó gerado pela regra <exp_or>.
         """
         return self.parse_or()
@@ -119,9 +124,10 @@ class ArvoreParsing:
     def parse_or(self):
         """
         Representação da regra de <exp_or>. Processa recursivamente uma 
-        expressão or.
-        
-        Retorno:
+        expressão or, sendo ela
+            <exp_or> ::= <exp_and> (OR <exp_and>)* 
+     
+        Retorna:
             O nó gerado pelo processamento recursivo.
         """
         no_atual = self.parse_and()
@@ -145,9 +151,10 @@ class ArvoreParsing:
     def parse_and(self):
         """
         Representação da regra de <exp_and>. Processa recursivamente uma 
-        expressão and.
+        expressão and, sendo ela
+            <exp_and> ::= <exp_not> (AND <exp_not>)*      
         
-        Retorno:
+        Retorna:
             O nó gerado pelo processamento recursivo.
         """
         no_atual = self.parse_not()
@@ -171,9 +178,10 @@ class ArvoreParsing:
     def parse_not(self):
         """
         Representação da regra de <exp_not>. Processa recursivamente uma 
-        expressão not.
+        expressão not, sendo ela
+            <exp_not> ::= NOT <exp_not> | <subexp>   
         
-        Retorno:
+        Retorna:
             O nó gerado pelo processamento recursivo.
         """
         if self.token_atual() == "NOT":
@@ -194,9 +202,14 @@ class ArvoreParsing:
     def parse_subexp(self):
         """
         Representação da regra de <sub_exp>. Processa recursivamente uma 
-        sub-expressão.
+        sub-expressão. 
+            <subexp> ::= "(" <exp> ")" | <palavra> 
+            <palavra> ::= (<letra> | <digito>)*  
+            <letra> ::= "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m" 
+                      | "n" | "o" | "p" | "q" | "r" | "s" | "t" | "u" | "v" | "w" | "x" | "y" | "z"
+            <digito> ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" 
         
-        Retorno:
+        Retorna:
             O nó gerado pelo processamento recursivo.
         """
 
@@ -229,12 +242,11 @@ class ArvoreParsing:
         """
         Gera a árvore de parsing a partir dos tokens da gramática.
         
-        Retorno:
+        Retorna:
             O nó raiz da árvore de parsing.
         """
         if not self.tokens:
-            print("ERRO: expressão vazia")
-            return None
+            raise ValueError("Consulta vazia")
         
         self.raiz = self.parse_exp()
 
@@ -248,32 +260,32 @@ class ArvoreParsing:
         return self.raiz
 
 
-def processa_arvore_parsing(no : NoParsing, trie_palavras: TrieCompacta, todos_arquivos : set):
+def processa_arvore_parsing(no : NoParsing, trie_palavras: TrieCompacta, todos_documentos : set):
     """
-    Processa uma árvore de Parsing recursivamente,
-    buscando os arquivos em uma trie.
+    Processa uma árvore de Parsing recursivamente, aplicando operações booleanas sobre os 
+    termos dos documentos armazenados em uma Trie Compacta.
     
-    Atributos:
+    Parâmetros:
         no (NoParsing): o nó que será processado.
         trie_palavras (TrieCompacta): a trie que armazena todas palavras de todos os arquivos.
-        todos_arquivos (set): todas tuplas (seção, número) dos arquivos.
+        todos_documentos (set): todas tuplas (seção, número) dos arquivos.
     
-    Retorno:
+    Retorna:
         Um set com todos os arquivos que satisfazem a consulta.
     """
     if no is None:
         return set()
     
     if no.operador == "AND":
-        return (processa_arvore_parsing(no.esquerda, trie_palavras, todos_arquivos) 
-                & processa_arvore_parsing(no.direita, trie_palavras, todos_arquivos))
+        return (processa_arvore_parsing(no.esquerda, trie_palavras, todos_documentos) 
+                & processa_arvore_parsing(no.direita, trie_palavras, todos_documentos))
     
     elif no.operador == "OR":
-        return (processa_arvore_parsing(no.esquerda, trie_palavras, todos_arquivos)
-                | processa_arvore_parsing(no.direita, trie_palavras, todos_arquivos))
+        return (processa_arvore_parsing(no.esquerda, trie_palavras, todos_documentos)
+                | processa_arvore_parsing(no.direita, trie_palavras, todos_documentos))
 
     elif no.operador == "NOT":
-        return todos_arquivos - (processa_arvore_parsing(no.direita, trie_palavras, todos_arquivos))
+        return todos_documentos - (processa_arvore_parsing(no.direita, trie_palavras, todos_documentos))
     
     else:
         palavra = no.operador
@@ -284,13 +296,13 @@ def processa_arvore_parsing(no : NoParsing, trie_palavras: TrieCompacta, todos_a
 def tem_no_invalido(no):
     """
     Verifica recursivamente se um no é inválido, ou seja, se algum
-    de seus filhos tem um filho "None".
+    de seus filhos é None.
     
-    Atributos:
+    Parâmetros:
         no (NoParsing): o nó a ser verificado.
 
-    Retorno:
-        True se for inválido, ou False caso contrário.
+    Retorna:
+        True se for inválido, False caso contrário.
     """
     if no is None:
         return True
@@ -306,13 +318,13 @@ def tem_no_invalido(no):
 
 def arvore_eh_valida(arvore):
     """
-    Verifica se uma árvore é inválida, verificando se sua raíz é
-    None ou se não tem nenhum nó filho inválido.
+    Verifica se uma árvore é válida, isto é, sem raiz nula e sem
+    nós inválidos.
     
-    Atributos:
+    Parâmetros:
         arvore (NoParsing): a árvore a ser verificada.
 
-    Retorno:
+    Retorna:
         True se for válida, ou False caso contrário.
     """
     if arvore is None:
@@ -328,21 +340,26 @@ def realiza_consulta(query, trie_palavras : TrieCompacta, todos_documentos : set
     por meio de uma trie compacta que armazena todas palavras dos
     documentos e de uma árvore de parsing que processa a query.
     
-    Atributos:
+    Parâmetros:
         query (str): a consulta a ser realizada.
-        trie_palavras (TrieCompacta): a trie compacta que tem todas palavras dos arquivos.
-        todos_documento (set): conjunto das tuplas (seção, número) de todos os arquivos.
+        trie_palavras (TrieCompacta): a trie compacta que tem todas palavras dos documentos.
+        todos_documentos (set): conjunto das tuplas (seção, número) de todos os documentos.
 
-    Retorno:
-        Um set com todos os arquivos que satisfazem a consulta
-        ou None caso ocorra um erro.
+    Retorna:
+        Conjunto de tuplas (seção, número) de todos os documentos que satisfaçam 
+        a consulta ou None caso a consulta seja inválida.
     """
-    query_normalizada = normaliza_query(query)
-    parser = ArvoreParsing(query_normalizada)
-    arvore = parser.gera_parsing_tokens()
+    try:
+        parser = ArvoreParsing(query)
+        arvore = parser.gera_parsing_tokens()
 
-    if arvore_eh_valida(arvore):
-        return processa_arvore_parsing(arvore, trie_palavras, todos_documentos)
-    
-    else:
+        if arvore_eh_valida(arvore):
+            return processa_arvore_parsing(arvore, trie_palavras, todos_documentos)
+        
+        else:
+            print("ERRO: Árvore de parsing inválida.")
+            return None
+        
+    except ValueError as e:
+        print("ERRO de parsing: ", e)
         return None
