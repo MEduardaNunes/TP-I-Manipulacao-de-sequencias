@@ -29,9 +29,8 @@ def processar_texto(texto):
 
 def normaliza_query(query):
     """
-    Normaliza a query, convertando palavras para minúsculo (com exceção os operadores),
-    tira apóstofres possesivos (como Carl's -> Carl) e remove qualquer outro símbolo que
-    não pertença à gramática da consulta.
+    Normaliza a query, convertando palavras para minúsculo (com exceção os operadores)
+    e tira apóstofres possesivos (como Carl's -> Carl).
 
     Parâmetros:
         query (str): A string a ser processada.
@@ -48,9 +47,7 @@ def normaliza_query(query):
 
         else:
             palavra = re.sub(r"['’]s$", "", palavra)
-            palavra_alfanumerica = re.sub(r'[^a-zA-Z0-9]', "", palavra) 
-            if palavra_alfanumerica:
-                query_normalizada += palavra_alfanumerica.lower() + " "
+            query_normalizada += palavra.lower() + " "
 
     return query_normalizada.strip()
 
