@@ -17,7 +17,7 @@ import re
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from TrieCompacta import TrieCompacta
-from Utils import normaliza_query
+from utils import normaliza_query
 
 
 class NoParsing:

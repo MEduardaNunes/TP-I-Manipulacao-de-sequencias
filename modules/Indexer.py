@@ -1,5 +1,5 @@
-from TrieCompacta import TrieCompacta, NoTrie
-from .utils import ListaLigada, processar_texto
+from TrieCompacta import TrieCompacta
+from .utils import ListaLigada, processar_texto, No
 from .models import Documento, Categoria
 import os
 import math
