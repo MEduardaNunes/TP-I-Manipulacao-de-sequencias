@@ -2,8 +2,7 @@ from flask import Flask, render_template, request, session, redirect, url_for
 from modules.indexer import Corpus 
 from modules.resultados import GerenciadorResultados
 from modules.models import Categoria
-from modules.search import ArvoreParsing, arvore_eh_valida, realiza_consulta
-from modules.utils import normaliza_query
+from modules.search import realiza_consulta
 import os
 import traceback
 
@@ -82,7 +81,7 @@ def search_results():
         
         try:
             todos_documentos = corpus_index.trie.get_todos_doc_ids()
-            resultados_ids = realiza_consulta(termo, corpus_index.trie, todos_documentos)
+            resultados_ids = realiza_consulta(termo, corpus_index.trie, corpus_index.todos_documentos)
             
             if(resultados_ids != None):
                 gerenciador = GerenciadorResultados(caminho_corpus, mapa_reverso_categoria)
