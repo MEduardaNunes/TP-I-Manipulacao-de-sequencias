@@ -34,14 +34,12 @@
         </p>
         <p> Você pode realizar consultas de AND, OR e NOT sobre qualquer termo. </p>
 
-        <form method = "POST">
+        <form method="POST" action="{{ url_for('search_results') }}">
             <input type = "text" id = "mensagem" name = "mensagem" placeholder = "Insira sua busca aqui..." required>
             <button type = "submit"> Buscar </button>
         </form>
 
-        {% if resposta %}
-            <p class = "texto"> {{ resposta|replace('\n', '<br>')|safe }} </p>
-        {% endif %}
     </div>
 </body>
+
 </html>
