@@ -19,8 +19,7 @@ debug_tree:
 	@echo "Arquivo 'arvore_completa.txt' criado com sucesso!"
 
 clean:
-	@echo "--> Removendo ambiente virtual e arquivos de cache..."
-	rm -rf $(VENV_DIR)
+	@echo "--> Removendo arquivos de cache..."
 	rm -rf saved_index
 	find . -type f -name "*.pyc" -delete
 	find . -type d -name "__pycache__" -exec rm -rf {} +
