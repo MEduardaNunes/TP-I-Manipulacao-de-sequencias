@@ -262,6 +262,28 @@ class ArvoreParsing:
             self.raiz = None
 
         return self.raiz
+    
+    def imprimir_debug(self):
+        """
+        Imprime o estado atual da consulta e os tokens gerados para fins de depuração.
+        """
+        print("\n--- DEBUG DA ÁRVORE DE PARSING ---")
+        print(f"Consulta Original: {self.query}")
+        
+        # Verifica se os tokens foram gerados corretamente
+        if self.tokens:
+            print(f"Número de Tokens: {len(self.tokens)}")
+            print(f"Tokens Gerados: {self.tokens}")
+        else:
+            print("AVISO: Nenhum token foi gerado (query vazia após processamento).")
+
+        # Verifica se a raiz da árvore foi construída
+        if self.raiz:
+            # O __repr__ de NoParsing deve imprimir a estrutura de forma legível
+            print(f"Estrutura da Árvore (Raiz): {self.raiz}") 
+        else:
+            print("ESTADO: A raiz da árvore ainda não foi construída ou o parsing falhou.")
+        print("-----------------------------------")
 
 
 def processa_arvore_parsing(no : NoParsing, trie_palavras: TrieCompacta, todos_documentos : set):
@@ -356,15 +378,162 @@ def realiza_consulta(query, trie_palavras : TrieCompacta, todos_documentos : set
     try:
         parser = ArvoreParsing(query)
         arvore = parser.gera_parsing_tokens()
+        parser.imprimir_debug()
 
         if arvore_eh_valida(arvore):
-            return processa_arvore_parsing(arvore, trie_palavras, todos_documentos)
-        
+            documentos = processa_arvore_parsing(arvore, trie_palavras, todos_documentos)
+            return documentos, arvore
         else:
             print("ERRO: Árvore de parsing inválida.")
-            return None
+            return set(), None
         
     except ValueError as e:
         print("ERRO de parsing: ", e)
-        return None
+        return set(), None
+
+def _coletar_termos_query(no: 'NoParsing', termos: set = None):
+    """
+    Percorre a Árvore de Parsing recursivamente, coletando todos os nós que
+    representam palavras (termos) e ignorando os nós que representam operadores (AND, OR, NOT).
     
+    Parâmetros:
+        no (NoParsing): O nó atual a ser processado (começando pela raiz).
+        termos (set): O conjunto acumulador de termos únicos.
+        
+    Retorna:
+        Um set de strings contendo todos os termos únicos da consulta.
+    """
+    if termos is None:
+        termos = set()
+        
+    if no is None:
+        return termos
+        
+    # Verifica se o nó é uma palavra 
+    if no.operador not in ("AND", "OR", "NOT"):
+        termos.add(no.operador)
+        return termos
+    
+    # Processa o filho da esquerda (para AND e OR)
+    _coletar_termos_query(no.esquerda, termos)
+    
+    # Processa o filho da direita (para AND, OR e NOT)
+    _coletar_termos_query(no.direita, termos)
+    
+    return termos
+    
+class GerenciadorDeBusca:
+    """ Coordena a consulta de forma completa (parsing, busca booleana, cálculo de relevância e formatação)."""
+    
+    def __init__(self, trie_index: TrieCompacta, todos_documentos: set, caminho_corpus: str, estatisticas_corpus: dict):
+        self.trie = trie_index # Referência ao índice invertido
+        self.todos_documentos = todos_documentos # Todos os ids de documentos
+        self.caminho_corpus = caminho_corpus # Caminho dos dados
+        self.estatisticas_corpus = estatisticas_corpus # Dicionário com estatísticas para o cálculo do z-score
+        self.mapa_categorias = {c.value: c.name for c in Categoria} # Usado para formatar o doc_id na saída
+
+    def executar_busca(self, query_string: str, num_pagina: int = 1, tamanho_pagina: int = 10):
+        """ Executa o ciclo completo da RI e retorna os resultados formatados."""
+        
+        try:
+            # Parsing e busca booleana (retorna ids filtrados e a raiz da árvore)
+            documentos_finais_ids, arvore_raiz = realiza_consulta(query_string, self.trie, self.todos_documentos)
+            
+            if not documentos_finais_ids:
+                return []
+            
+            # Extrai os termos da consulta da árvore
+            lista_todos_os_termos = list(_coletar_termos_query(arvore_raiz))
+
+            # Calcula z-scores, relevâncias e termo de foco
+            resultados = self._preparar_resultados_para_ordenacao(
+                arvore_raiz, documentos_finais_ids, lista_todos_os_termos # Passa a lista
+            )
+            
+            # Inicializa o gerenciador de resultados
+            gerenciador = GerenciadorResultados(
+                self.caminho_corpus, 
+                self.mapa_categorias,
+                lista_todos_os_termos 
+            )
+            
+            # Adiciona os resultados calculados para ordenação
+            for item in resultados:
+                gerenciador.adicionar_resultado(
+                    item.doc_id, item.relevancia, item.query_termo, item.caractere_inicial
+                )
+            
+            return gerenciador.obter_pagina_formatada(num_pagina, tamanho_pagina)
+
+        except ValueError as e:
+            return [{'id': 'ERRO de Sintaxe', 'score': '0.0000', 'snippet': f'Erro na consulta: {e}'}]
+        except Exception as e:
+            traceback.print_exc()
+            return [{'id': 'ERRO Interno', 'score': 'N/A', 'snippet': f'Falha inesperada na RI: {e}'}]
+
+
+    def _preparar_resultados_para_ordenacao(self, arvore_raiz: NoParsing, doc_ids: set, lista_todos_os_termos: list):
+        """ Calcula a relevância e define o termo/posição de destaque."""
+        
+        # Busca lista invertida por termo
+        lista_tokens_validos = lista_todos_os_termos
+        
+        if not lista_tokens_validos:
+             return [ResultadoItem(doc_id=d, relevancia=0.0, query_termo="", caractere_inicial=0) for d in doc_ids]
+
+        dados_por_doc_id = {}
+        
+        for termo in lista_tokens_validos:
+            lista_invertida_do_termo = self.trie.busca_palavra(termo) 
+            stats = self.estatisticas_corpus.get(termo, {"media": 0, "desvio_padrao": 0})
+            
+            media = stats['media']
+            desvio = stats['desvio_padrao']
+            
+            for doc_id in doc_ids:
+                if doc_id in lista_invertida_do_termo:
+                    
+                    dados = lista_invertida_do_termo[doc_id]
+                    freq = dados['frequencia']
+                    pos = dados['primeira_posicao']
+
+                    # Cálculo do z-score: (frequência - média) / desvio padrão
+                    z_score = (freq - media) / desvio if desvio != 0 else 0 
+                    
+                    if doc_id not in dados_por_doc_id:
+                        dados_por_doc_id[doc_id] = {'termo_scores': []}
+                        
+                    dados_por_doc_id[doc_id]['termo_scores'].append({
+                        'z_score': z_score,
+                        'posicao': pos,
+                        'termo': termo,
+                        'freq': freq
+                    })
+        
+        resultados = []
+        
+        for doc_id in doc_ids:
+            doc_data = dados_por_doc_id.get(doc_id)
+            
+            if not doc_data or not doc_data['termo_scores']:
+                relevancia_final = 0.0
+                melhor_termo = lista_tokens_validos[0]
+                melhor_posicao = 0
+            else:
+                # Calcula a média dos z-ccores
+                scores = [t['z_score'] for t in doc_data['termo_scores']]
+                relevancia_final = sum(scores) / len(scores)
+                
+                # Encontra o termo com a maior frequência para ser o foco do snippet
+                melhor_termo_info = max(doc_data['termo_scores'], key=lambda x: x['freq'])
+                melhor_termo = melhor_termo_info['termo']
+                melhor_posicao = melhor_termo_info['posicao']
+
+            resultados.append(ResultadoItem(
+                doc_id=doc_id, 
+                relevancia=relevancia_final, 
+                query_termo=melhor_termo, 
+                caractere_inicial=melhor_posicao
+            ))
+            
+        return resultados 
