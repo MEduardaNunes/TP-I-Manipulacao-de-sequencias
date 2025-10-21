@@ -2,30 +2,39 @@ import re
 
 def processar_texto(texto):
     """
-    Normaliza um texto: converte para minúsculas e extrai palavras e números,
-    removendo pontuações e outros caracteres.
+    Normaliza um texto: converte para minúsculas e extrai palavras/números,
+    junto com o índice do caractere inicial de cada um no texto original.
 
     Parâmetros:
         texto (str): A string de entrada a ser processada.
 
     Retorno:
-        Uma lista de strings, onde cada string é uma palavra normalizada.
+        list[tuple[str, int]]: Uma lista de tuplas, onde cada tupla contém
+                               o termo normalizado (str) e seu índice de
+                               caractere inicial (int) no texto original.
+                               Ex: [('palavra1', 0), ('123', 9), ...]
     """
-    termo_atual = ""
-    lista_de_termos = []
-    texto_minusculo = texto.lower() + " "
     
-    for caractere in texto_minusculo:
+    tokens_com_posicao = [] # Lista para armazenar as tuplas (termo, indice_char)
+    termo_atual = ""
+    inicio_termo_atual = -1 # Guarda o índice do caractere onde o termo atual começou
+    
+    texto_com_espaco = texto + " "
+    
+    for indice_char, caractere in enumerate(texto_com_espaco):
         # Verifica se o caractere é uma letra ou um número.
         if caractere.isalnum():
-            termo_atual += caractere
+            if not termo_atual:
+                inicio_termo_atual = indice_char
+            termo_atual += caractere.lower()
         else:
             # Se não for, é um separador
             if termo_atual: # Verifica se o termo atual não está vazio
-                lista_de_termos.append(termo_atual)
+                tokens_com_posicao.append((termo_atual, inicio_termo_atual))
                 termo_atual = "" # Reseta para o próximo termo
+                inicio_termo_atual = -1
 
-    return lista_de_termos
+    return tokens_com_posicao
 
 def normaliza_query(query):
     """
