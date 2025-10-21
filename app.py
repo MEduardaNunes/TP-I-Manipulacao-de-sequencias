@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, session, redirect, url_for
 from modules.indexer import Corpus 
 from modules.resultados import GerenciadorResultados
 from modules.models import Categoria
-from modules.search import realiza_consulta
+from modules.search import realiza_consulta, GerenciadorDeBusca
 import os
 import traceback
 
@@ -10,9 +10,10 @@ app = Flask(__name__)
 app.secret_key = "senha_super_secreta"
 
 corpus_index = None
+gerenciador_de_busca = None
 
 def inicializar_indice():
-    global corpus_index
+    global corpus_index, gerenciador_de_busca
     caminho_indice_salvo = "data/indice.dat" 
     
     corpus_index = Corpus()
@@ -49,7 +50,7 @@ def home():
 @app.route('/search', methods=['GET', 'POST'])
 def search_results():
     """Rota para processar a busca e exibir os resultados."""
-    global corpus_index
+    global gerenciador_de_busca
     session.permanent = False
     
     if 'historico' not in session:
@@ -66,7 +67,6 @@ def search_results():
                 session['historico'].append(termo)
                 session['historico'] = session['historico'][-10:]
                 session.modified = True
-            
             return redirect(url_for('search_results', termo=termo))
         else:
             return redirect(url_for('home'))
@@ -74,38 +74,18 @@ def search_results():
     elif request.method == 'GET':
         termo = request.args.get('termo')
     
-    if termo and corpus_index and corpus_index.estatisticas_corpus:
-        
-        mapa_reverso_categoria = {c.value: c.name for c in Categoria}
-        caminho_corpus = os.path.abspath(os.path.join(os.path.dirname(__file__), './bbc'))
-        
+    if termo and gerenciador_de_busca:
         try:
-            todos_documentos = corpus_index.trie.get_todos_doc_ids()
-            resultados_ids = realiza_consulta(termo, corpus_index.trie, corpus_index.todos_documentos)
+            resultados = gerenciador_de_busca.executar_busca(termo, num_pagina=1, tamanho_pagina=10)
             
-            if(resultados_ids != None):
-                gerenciador = GerenciadorResultados(caminho_corpus, mapa_reverso_categoria)
-                
-                relevancia_final = 0
-                
-                # Adiciona os resultados encontrados à lista formatada
-                for doc_id in resultados_ids:
-                    gerenciador.adicionar_resultado(
-                        doc_id,
-                        relevancia_final,
-                        termo,  # Termo que foi pesquisado
-                        0  # Caractere inicial 
-                    )
-                    
-                resultados = gerenciador.obter_pagina_formatada(num_pagina=1, tamanho_pagina=10)
-            else:
-                print("Consulta inválida")
-                
+            if resultados is None: 
+                resultados = [{'id': 'ERRO', 'score': 'N/A', 'snippet': 'Consulta inválida (erro de parsing).'} ]
+            
         except Exception as e:
             print(f"Erro durante o processamento da busca para '{termo}': {e}")
             traceback.print_exc()
             resultados = [{'id': 'ERRO', 'score': 'N/A', 'snippet': f'Falha na busca: {e}'}]
-            
+    
     return render_template('search_results.html', termo=termo, resultados=resultados)
 
 @app.route('/historico', methods=['GET', 'POST'])
