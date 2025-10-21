@@ -120,6 +120,10 @@ def historico():
 
     return render_template('historico.html', historico = session['historico'])
 
+@app.route('/ajuda')
+def ajuda():
+    return render_template('ajuda.html')
+
 if __name__ == '__main__':
     inicializar_indice()
     

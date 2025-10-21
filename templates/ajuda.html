@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Página inicial</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    <div class = "container">
+        <div class = "item">
+            <a href = "{{ url_for('home') }}">
+                <button id = "home"> Início </button>
+            </a>
+        </div>
+
+        <div class = "item">
+            <a href = "{{ url_for('historico') }}">
+                <button id = "historico"> Histórico </button>
+            </a>
+        </div>
+
+        <div class = "item">
+            <button id = "botao-voltar" onclick = "window.history.back()"> Voltar </button>
+        </div>
+    </div>
+    
+    <div class="central">
+        <h1> Ajuda </h1>
+
+        <p> 
+            Para realizar uma busca, você deve digitar uma composição de termos e operadores lógicos.
+        </p>
+
+        <p>
+            Os termos são palavras alfonuméricas únicas, ou seja, sem espaços em branco. Você também pode buscas por termos com apóstofre simples (como em rock'n'roll) e termos com hífen (como em check-in). Qualquer outro símbolo diferente de número, letra, apóstofre simples, hífen irá gerar um erro no termo.
+        </p>
+        <p>
+            Os operadores lógicos são AND, OR, NOT e () (parênteses).
+            <ul>
+                <li>
+                    AND: pesquisa por arquivos que tenha ambos os termos. <br>
+                    SINTAXE: x AND y
+                </li>
+                <li>
+                    OR: pesquisa por arquivos que contenham pelo menos um dos termos. <br>
+                    SINTAXE: x OR y
+                </li>
+                <li>
+                    NOT: pesquisa por arquivos que não contenha o termo. <br>
+                    SINTAXE: NOT x
+                </li>
+                <li>
+                    () - parênteses: muda a ordem de realização das operações. <br>
+                    SINTAXE: (expressão)
+                </li>
+            </ul>
+        </p>
+
+        <p>
+            ATENÇÃO: os operadores lógicos devem ser escritos com letras maiúsculas para serem tratados como operadores. Caso alguma letra não seja maiúscula, essa palavra será tratada como um termo.
+        </p>
+        <p>
+            Abaixo são listadas buscas que você não deve realizar, pois não ocorrerão corretamente.
+            <ul>
+                <li>
+                    EXEMPLO: "happy AND" ou "AND happy" ou "AND" <br>
+                    ERRO: falta termos para o operador lógico, o mesmo ocorreria para OR e NOT sem termos. Use os operadores lógicos com o número de termos esperados.
+                </li>
+                <li>
+                    EXEMPLO: "happy and sad" ou "happy or sad" ou "not happy" <br>
+                    ERRO: os operadores lógicos são interpretados como termos e a busca fica errada, pois não é possível ter dois termos seguidos (pois não aceita espaço em branco em um termo).
+                </li>
+                <li>
+                    EXEMPLO: "()" ou "happy AND (" ou "happy and )" <br>
+                    ERRO: parênteses nulo ou parênteses faltando. Se existe um parênteses, coloque uma expressão nele e abra e feche corretamente.
+                </li>
+                <li>
+                    EXEMPLO: "hey! AND hello." ou "hi#ps" ou "***" <br>
+                    ERRO: símbolos não reconhecidos pelo buscador. Use termos apenas com letras, números, apóstrofe simples e hífen.
+                </li>
+            </ul>
+        </p>
+    </div>
+</body>
+
+</html>
