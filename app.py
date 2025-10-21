@@ -108,8 +108,23 @@ if __name__ == '__main__':
     inicializar_indice()
     
     if corpus_index and corpus_index.estatisticas_corpus:
-        mapa_reverso_categoria = {c.value: c.name for c in Categoria}
-        if hasattr(corpus_index, 'trie'): 
-            print("\nDEBUG: Imprimindo amostra da Trie")
-            corpus_index.trie.imprimir_arvore(mapa_categorias=mapa_reverso_categoria, limite=5)
+        from modules.search import ArvoreParsing # debug
+        consulta_teste = "apple AND banana OR (car NOT ship)" # debug
+        
+        try:
+            parser_teste = ArvoreParsing(consulta_teste)
+            parser_teste.gera_parsing_tokens()
+            
+            print("\n====================================")
+            print("TESTE MANUAL: DEBUG ÁRVORE DE PARSING")
+            parser_teste.imprimir_debug() # AQUI ESTÁ A CHAMADA
+            print("====================================")
+
+        except Exception as e:
+            print(f"Erro ao testar o parsing: {e}")
+            
+        #mapa_reverso_categoria = {c.value: c.name for c in Categoria}
+        #if hasattr(corpus_index, 'trie'): 
+            #rint("\nDEBUG: Imprimindo amostra da Trie")
+            #corpus_index.trie.imprimir_arvore(mapa_categorias=mapa_reverso_categoria, limite=5)
     app.run(debug=True)
