@@ -1,13 +1,14 @@
 from flask import Flask, render_template, request, session, redirect, url_for
 from modules.indexer import Corpus 
-from modules.resultados import Resultados
+from modules.resultados import GerenciadorResultados
 from modules.models import Categoria
+from modules.utils import normaliza_query
 import os
+import traceback
 
 app = Flask(__name__)
 app.secret_key = "senha_super_secreta"
 
-resposta = None
 corpus_index = None
 
 def inicializar_indice():
@@ -38,13 +39,17 @@ def inicializar_indice():
         
 
 @app.route('/', methods=['GET', 'POST'])
-def home(): # talvez receber como parametro um objeto da classe consulta e armazenar a query direto nele pra usar no main
+def home(): 
+    global corpus_index
     session.permanent = False
+    
     if 'historico' not in session:
         session['historico'] = []
 
     resposta = None
     termo = None
+    
+    mapa_reverso_categoria = {c.value: c.name for c in Categoria}
 
     if request.method == 'POST':
         termo = request.form['mensagem']
@@ -62,7 +67,25 @@ def home(): # talvez receber como parametro um objeto da classe consulta e armaz
             session['historico'].append(termo)
             session['historico'] = session['historico'][-10:]
             session.modified = True
-
+        
+        try:
+            query_normalizada = normaliza_query(termo)
+            lista_resultados = corpus_index.trie.buscar_resultados(query_normalizada)
+            
+            caminho_corpus = os.path.abspath(os.path.join(os.path.dirname(__file__), './bbc'))
+            gerenciador = GerenciadorResultados(caminho_corpus, mapa_reverso_categoria)
+            
+            for item in lista_resultados:
+                gerenciador.adicionar_resultado(
+                    item.doc_id, item.relevancia, item.query_termo, item.caractere_inicial
+                )
+            
+            resultados = gerenciador.obter_pagina_formatada(num_pagina=1, tamanho_pagina=10)
+        except Exception as e:
+            print(f"Erro durante o processamento da busca: {e}")
+            traceback.print_exc()
+            resultados_formatados = [{'id': 'ERRO', 'score': 'N/A', 'snippet': f'Falha na busca: {e}'}]
+            
     return render_template('index.html', resposta=resposta)
 
 @app.route('/historico', methods=['GET', 'POST'])
@@ -85,22 +108,14 @@ def historico():
 if __name__ == '__main__':
     inicializar_indice()
     
-    resultados = Resultados()
-    
-    # declara um objeto Consulta
-    # processa a consulta
-    # resultados = lista retornada pela função de busca na TrieCompacta
-    #lista_resultados
-    # chama a função pra processar o snippets
-    # chama a função de calcular relevancia
-    # chama a função pra ordenar pela relevancia
-    # mostra resultados
-    
     if corpus_index and corpus_index.estatisticas_corpus:
+        # Só exibe a árvore de debug se o índice foi carregado
         mapa_reverso_categoria = {c.value: c.name for c in Categoria}
-        
-        corpus_index.trie.imprimir_arvore(mapa_categorias=mapa_reverso_categoria, limite=5)
+        if hasattr(corpus_index, 'trie'): 
+            corpus_index.trie.imprimir_arvore(mapa_categorias=mapa_reverso_categoria, limite=5)
+        else:
+            print("Aviso: Trie não encontrada no objeto Corpus.")   
     else:
-        print("FALHA: nao foi possível imprimir a árvore")
+        print("FALHA: o índice não foi carregado, a aplicação Flask pode não funcionar corretamente.")
 
     app.run(debug=True)
