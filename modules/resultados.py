@@ -54,11 +54,12 @@ def mergesort(lista_resultados):
             
 class GerenciadorResultados:
     """Armazena os resultados de uma busca, ordena-os por relevância e fornece snippets formatados"""
-    def __init__(self, caminho_corpus, mapa_categorias):
+    def __init__(self, caminho_corpus, mapa_categorias, todos_os_termos: list):
         self._resultados= [] # Lista de ResultadoItem
         self._resultados_ordenados = None
         self._caminho_corpus = caminho_corpus
         self._mapa_categorias = mapa_categorias
+        self._todos_os_termos = todos_os_termos
         
     def adicionar_resultado(self, doc_id, relevancia, query_termo, caractere_inicial):
         """Adiciona um resultado"""
@@ -98,7 +99,8 @@ class GerenciadorResultados:
                 item.query_termo, 
                 item.caractere_inicial, 
                 self._caminho_corpus, 
-                self._mapa_categorias
+                self._mapa_categorias,
+                self._todos_os_termos
             )
 
             # Formata o id do doc de (int, int) para string
