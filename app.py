@@ -15,15 +15,16 @@ gerenciador_de_busca = None
 def inicializar_indice():
     global corpus_index, gerenciador_de_busca
     caminho_indice_salvo = "data/indice.dat" 
-    
+    caminho_relativo = './bbc'
+    caminho_corpus = os.path.abspath(os.path.join(os.path.dirname(__file__), caminho_relativo))
+
     corpus_index = Corpus()
+    indice_carregado_ou_construido = False
     
     if os.path.exists(caminho_indice_salvo) and corpus_index.carregar_de_disco(caminho_indice_salvo):
         print("SUCESSO: O índice foi carregado do arquivo")
+        indice_carregado_ou_construido = True
     else:
-        caminho_relativo = './bbc'
-        caminho_corpus = os.path.abspath(os.path.join(os.path.dirname(__file__), caminho_relativo))
-
         if not os.path.exists(caminho_corpus):
             print(f"Diretório do corpus não encontrado em '{caminho_corpus}'")
             return
@@ -35,9 +36,25 @@ def inicializar_indice():
             corpus_index.imprimir_estatisticas(limite=10)
             os.makedirs(os.path.dirname(caminho_indice_salvo), exist_ok=True)
             corpus_index.salvar_em_disco(caminho_indice_salvo)
+            indice_carregado_ou_construido = True
         else:
             print("\nFALHA: O índice não pôde ser criado. Verifique os logs") # DEBUG
 
+    if indice_carregado_ou_construido:
+        try:
+            todos_documentos = corpus_index.todos_documentos 
+            
+            gerenciador_de_busca = GerenciadorDeBusca(
+                trie_index=corpus_index.trie,
+                todos_documentos=todos_documentos,
+                caminho_corpus=caminho_corpus,
+                estatisticas_corpus=corpus_index.estatisticas_corpus
+            )
+            print("SUCESSO: Gerenciador de Busca inicializado e pronto para a busca.")
+            
+        except Exception as e:
+            print(f"[ERRO FATAL] Falha ao criar GerenciadorDeBusca: {e}")
+            traceback.print_exc()
 @app.route('/', methods=['GET'])
 def home(): 
     """Página inicial com o formulário de busca."""
@@ -109,7 +126,7 @@ if __name__ == '__main__':
     
     if corpus_index and corpus_index.estatisticas_corpus:
         from modules.search import ArvoreParsing # debug
-        consulta_teste = "apple AND banana OR (car NOT ship)" # debug
+        consulta_teste = "apple AND banana OR (car AND NOT ship)" # debug
         
         try:
             parser_teste = ArvoreParsing(consulta_teste)
@@ -120,6 +137,8 @@ if __name__ == '__main__':
             parser_teste.imprimir_debug() # AQUI ESTÁ A CHAMADA
             print("====================================")
 
+            resultado_a = corpus_index.trie.busca_palavra("a")
+            print(f"Resultado da busca por 'a': {resultado_a}")
         except Exception as e:
             print(f"Erro ao testar o parsing: {e}")
             
