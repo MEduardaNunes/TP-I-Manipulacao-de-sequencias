@@ -479,7 +479,7 @@ class GerenciadorDeBusca:
         lista_tokens_validos = lista_todos_os_termos
         
         if not lista_tokens_validos:
-             return [ResultadoItem(doc_id=d, relevancia=0.0, query_termo="", caractere_inicial=0) for d in doc_ids]
+            return [ResultadoItem(doc_id=d, relevancia=0.0, query_termo="", caractere_inicial=0) for d in doc_ids]
 
         dados_por_doc_id = {}
         
