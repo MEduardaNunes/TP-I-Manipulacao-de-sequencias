@@ -191,6 +191,27 @@ class TrieCompacta:
 
         return {}
     
+    def get_todos_doc_ids(self):
+        """
+        Calcula e retorna o set de todos os doc_id (tuplas (cat_int, num_int))
+        que existem no índice, percorrendo as listas invertidas de todos os nós.
+        """
+        todos_ids = set()
+        
+        self._coletar_ids_recursivo(self.raiz, todos_ids)
+        
+        return  todos_ids
+
+    def _coletar_ids_recursivo(self, no, todos_ids):
+        """Percorre a trie e coleta os ids de documentos."""
+        
+        # Adiciona todos os ids do nó atual
+        todos_ids.update(no.lista_invertida.keys())
+        
+        # Percorre recursivamente os filhos
+        for filho in no.filhos:
+            self._coletar_ids_recursivo(filho, todos_ids)
+    
     def imprimir_arvore(self, mapa_categorias = None, limite = 20):
         """
         Imprime a Trie Compacta a partir da raiz.
