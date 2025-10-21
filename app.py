@@ -2,8 +2,7 @@ from flask import Flask, render_template, request, session, redirect, url_for
 from modules.indexer import Corpus 
 from modules.resultados import GerenciadorResultados
 from modules.models import Categoria
-from modules.search import ArvoreParsing, arvore_eh_valida, realiza_consulta
-from modules.utils import normaliza_query
+from modules.search import realiza_consulta
 import os
 import traceback
 
