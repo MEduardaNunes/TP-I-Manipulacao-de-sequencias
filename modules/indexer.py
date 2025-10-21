@@ -87,9 +87,10 @@ class Corpus:
                 categoria_int = Categoria[doc.categoria].value
                 numero_int = int(doc.doc_id)
                 
+                doc_id = (categoria_int, numero_int)
                 self.todos_documentos.add(doc_id)
                 
-                self.todos_documentos.append((doc.categoria, doc_id))
+                self.todos_documentos.add((doc.categoria, doc_id))
                 # Insere o termo, o id do documento e a primeira posição de ocorrência do termo na trie Compacta
                 self.trie.insere_palavra(termo, (categoria_int, numero_int), indice_char)
         
