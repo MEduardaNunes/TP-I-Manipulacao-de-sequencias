@@ -1,5 +1,5 @@
-from TrieCompacta import TrieCompacta
-from .utils import ListaLigada, processar_texto, No
+from TrieCompacta import TrieCompacta, NoTrie
+from .utils import ListaLigada, processar_texto
 from .models import Documento, Categoria
 import os
 import math
@@ -75,8 +75,8 @@ class Corpus:
             frequencias_por_doc[doc_id_completo] = {}
 
             # Normalização do texto
-            termos = processar_texto(doc.conteudo) 
-            for posicao, termo in enumerate(termos):
+            termos_com_posicao = processar_texto(doc.conteudo)
+            for termo, indice_char in termos_com_posicao:
                 # Preenche o dicionário de frequências do doc atual
                 frequencias_por_doc[doc_id_completo][termo] = frequencias_por_doc[doc_id_completo].get(termo, 0) + 1
                 
@@ -85,7 +85,7 @@ class Corpus:
                 numero_int = int(doc.doc_id)
                 
                 # Insere o termo, o id do documento e a primeira posição de ocorrência do termo na trie Compacta
-                self.trie.insere_palavra(termo, (categoria_int, numero_int), posicao)
+                self.trie.insere_palavra(termo, (categoria_int, numero_int), indice_char)
         
         todos_os_termos = set(termo for freqs in frequencias_por_doc.values() for termo in freqs)        
         
@@ -177,7 +177,7 @@ class Corpus:
                     profundidade_atual = (len(linha) - len(linha.lstrip(' '))) // 2
                     valor, lista_invertida_dict = parse_linha_trie(linha)
 
-                    novo_no = No(valor)
+                    novo_no = NoTrie(valor)
                     novo_no.lista_invertida = lista_invertida_dict
 
                     while len(pilha_de_pais) > profundidade_atual:
@@ -239,22 +239,22 @@ class Corpus:
         conteudo_interno = ", ".join(partes)
         return f"{{{conteudo_interno}}}"
     
-    def _salvar_no_recursivo(self, arquivo, no, profundidade):
+    def _salvar_no_recursivo(self, arquivo, NoTrie, profundidade):
         """
         Método auxiliar recursivo para salvar os nós da trie
         """
         # Indentação para representar a estrutura da árvore
         indentacao = "  " * profundidade
         
-        lista_invertida_str = self._formatar_lista_invertida(no.lista_invertida)
+        lista_invertida_str = self._formatar_lista_invertida(NoTrie.lista_invertida)
         
         # faz com que o valor do nó seja escrito com aspas (ex: 'ad')
-        valor_str = repr(no.valor)
+        valor_str = repr(NoTrie.valor)
 
-        # Escreve o nó no arquivo: indentação, valor e sua lista invertida
+        # Escreve o nó NoTrie arquivo: indentação, valor e sua lista invertida
         arquivo.write(f"{indentacao}({valor_str},{lista_invertida_str})\n")
         
-        for filho in no.filhos:
+        for filho in NoTrie.filhos:
             self._salvar_no_recursivo(arquivo, filho, profundidade + 1)         
     
     # PARA DEBUG
