@@ -14,11 +14,13 @@
 import sys
 import os
 import re
+import traceback
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+from modules.resultados import ResultadoItem, GerenciadorResultados
 from TrieCompacta import TrieCompacta
-from utils import normaliza_query
-
+from modules.models import Categoria
+from modules.utils import normaliza_query
 
 class NoParsing:
     """
@@ -363,3 +365,4 @@ def realiza_consulta(query, trie_palavras : TrieCompacta, todos_documentos : set
     except ValueError as e:
         print("ERRO de parsing: ", e)
         return None
+    
