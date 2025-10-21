@@ -6,9 +6,10 @@
         <exp_and>     ::= <exp_not> (AND <exp_not>)*      
         <exp_not>     ::= NOT <exp_not> | <subexp>   
         <subexp>      ::= "(" <exp> ")" | <palavra> 
-        <palavra>     ::= (<letra> | <digito>)*  
-        <letra>       ::= "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m" 
+        <palavra>     ::= (<simbolo> | <digito>)*  
+        <simbolo>       ::= "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m" 
                         | "n" | "o" | "p" | "q" | "r" | "s" | "t" | "u" | "v" | "w" | "x" | "y" | "z"
+                        | "-" | "'"
         <digito>      ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" 
 """
 import sys
@@ -206,9 +207,10 @@ class ArvoreParsing:
         Representação da regra de <sub_exp>. Processa recursivamente uma 
         sub-expressão. 
             <subexp> ::= "(" <exp> ")" | <palavra> 
-            <palavra> ::= (<letra> | <digito>)*  
-            <letra> ::= "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m" 
+            <palavra> ::= (<simbolo> | <digito>)*  
+            <simbolo> ::= "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m" 
                       | "n" | "o" | "p" | "q" | "r" | "s" | "t" | "u" | "v" | "w" | "x" | "y" | "z"
+                      | "-" | "'"
             <digito> ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" 
         
         Retorna:
@@ -233,7 +235,7 @@ class ArvoreParsing:
 
             return no_atual
         
-        elif re.match(r'[a-z0-9]+$', self.token_atual() or "") and self.token_atual() not in ("AND", "OR", "NOT", "(", ")"):
+        elif re.match(r"[a-z0-9\-']+$", self.token_atual() or "") and self.token_atual() not in ("AND", "OR", "NOT", "(", ")"):
             palavra = self.consome_token()
             return NoParsing(palavra)
         
