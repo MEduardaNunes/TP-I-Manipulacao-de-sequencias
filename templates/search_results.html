@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Resultados para {{ termo }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    <div class = "container">
+        <div class = "item">
+            <button id = "botao-voltar" onclick = "window.history.back()"> Voltar </button>
+        </div>
+    </div>
+    
+    <div class="central">
+        <h1> Resultados da Busca </h1>
+
+        {% if termo %}
+            <h2> Busca por: "{{ termo }}" </h2>
+        {% endif %}
+
+        {% if resultados %}
+            <h3>Resultados encontrados: {{ resultados | length }}</h3>
+            <ul>
+                {% for resultado in resultados %}
+                    <li style="margin-bottom: 20px; border: 1px solid #ccc; padding: 10px;">
+                        <strong>ID:</strong> {{ resultado.id }} (Score: {{ resultado.score }})<br>
+                        <strong>Snippet:</strong> {{ resultado.snippet | safe }}
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>Nenhum resultado encontrado para "{{ termo }}" Tente outros termos na página inicial.</p>
+        {% endif %}
+    </div>
+</body>
+
+</html>
