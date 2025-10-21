@@ -82,7 +82,7 @@ def search_results():
         
         try:
             todos_documentos = corpus_index.trie.get_todos_doc_ids()
-            resultados_ids = realiza_consulta(termo, corpus_index.trie, todos_documentos)
+            resultados_ids = realiza_consulta(termo, corpus_index.trie, corpus_index.todos_documentos)
             
             if(resultados_ids != None):
                 gerenciador = GerenciadorResultados(caminho_corpus, mapa_reverso_categoria)

@@ -50,7 +50,9 @@ class Corpus:
             """Inicializa um objeto com uma trie vazia e um dicionário de estatísticas vazio"""
             self.trie = TrieCompacta()
             self.estatisticas_corpus = {}  # Formato: {"termo": {"media": x, "desvio_padrao": y}}  
-    
+            self.todos_documentos = set()
+            
+        
     def construir_indice(self, caminho_corpus):
         """
         Método responsável por fazer o processo de indexação (lê documentos, calcula estatísticas e preenche a trie)
@@ -58,7 +60,8 @@ class Corpus:
         Parâmetros:
             caminho_corpus (str): O caminho para o diretório raiz do corpus de documentos
         """
-    
+        self.todos_documentos.clear()
+        
         documentos = self._ler_documentos(caminho_corpus)
         total_docs = len(documentos)
         
@@ -84,6 +87,9 @@ class Corpus:
                 categoria_int = Categoria[doc.categoria].value
                 numero_int = int(doc.doc_id)
                 
+                self.todos_documentos.add(doc_id)
+                
+                self.todos_documentos.append((doc.categoria, doc_id))
                 # Insere o termo, o id do documento e a primeira posição de ocorrência do termo na trie Compacta
                 self.trie.insere_palavra(termo, (categoria_int, numero_int), indice_char)
         
