@@ -26,39 +26,50 @@
             <h3>Resultados encontrados: {{ resultados | length }}</h3>
             <ul>
                 {% for resultado in resultados %}
-                    <div class="resultado-item">
-                        <p class="arquivo-titulo"> Arquivo: {{ resultado.id }}
-                        </p>
-                        
-                        <p class="snippet-texto"> {{ resultado.snippet | safe }}
-                        </p>
-    
-                        <hr class="divisor">
-                    </div>
-                {% endfor %}
+                    <a href="{{ url_for('exibir_documento', categoria=resultado.categoria, id_documento=resultado.id_num) }}" class="resultado-link">
+                        <div class="resultado-item">
+                            <p class="arquivo-titulo"> 
+                                Arquivo: {{ resultado.id_completo }}
+                            </p>
+                            <p class="snippet-texto"> 
+                                {{ resultado.snippet | safe }}
+                            </p>
+                            <hr class="divisor"> 
+                        </div>
+                    </a> 
+                    {% endfor %}
             </ul>
 
-        <div class="paginacao-container"> {% if num_pagina > 1 %}
-                <a href="{{ url_for('search_results', termo=termo, page=num_pagina - 1) }}">
-                    <button class="botao-pagina"> &laquo; Anterior </button>
-                </a>
-            {% endif %}
-
-                <span style="font-size: 1.1em; font-weight: bold; margin: 0 15px;">
-                    Página {{ num_pagina }}
-                </span>
-
-                {% if tem_proxima_pagina %}
-                    <a href="{{ url_for('search_results', termo=termo, page=num_pagina + 1) }}">
-                        <button class="botao-pagina"> Próxima &raquo; </button>
+            <div class="paginacao-container"> 
+                {% if pagina_atual > 1 %}
+                    <a href="{{ url_for('search_results', termo=termo, page=pagina_atual - 1) }}">
+                        <button class="botao-pagina"> &laquo; Anterior </button>
                     </a>
                 {% endif %}
 
+                <span class="pagina-atual-texto">
+                    Página {{ pagina_atual }}
+                </span>
+
+                {% if tem_proxima_pagina %}
+                    <a href="{{ url_for('search_results', termo=termo, page=pagina_atual + 1) }}">
+                        <button class="botao-pagina"> Próxima &raquo; </button>
+                    </a>
+                {% endif %}
             </div>
         {% else %}
-            <p>Nenhum resultado encontrado para "{{ termo }}" na página {{ num_pagina }}. Tente outros termos na <a href="{{ url_for('home') }}">página inicial</a>.</p>
+            <p>Nenhum resultado encontrado para "{{ termo }}"{% if pagina_atual > 1 %} na página {{ pagina_atual }}{% endif %}. Tente outros termos na <a href="{{ url_for('home') }}">página inicial</a>.</p>
         {% endif %}
     </div>
+
+    <script>
+        function ir_para_url(elemento) {
+            const url = elemento.getAttribute('data-url');
+            if (url) {
+                window.location.href = url;
+            }
+        }
+    </script>
 </body>
 
 </html>

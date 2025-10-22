@@ -88,6 +88,16 @@ def _gerar_snippet_formatado(doc_id, termo_em_foco, indice_caractere_inicial, ca
 
         # Calcula limites, extrai e destaca o termo
         inicio_snippet, fim_snippet = _calcular_limites_snippet(len(conteudo), indice_caractere_inicial, tamanho_termo_em_foco)
+        
+        print(f"\n--- DEBUG LIMITES SNIPPET ---", flush=True)
+        print(f"Doc ID: {doc_id}", flush=True)
+        print(f"Tamanho Total do Conteúdo: {len(conteudo)}", flush=True)
+        print(f"Termo Foco: '{termo_em_foco}' (Tamanho: {tamanho_termo_em_foco})", flush=True) # <--- NOVO
+        print(f"Índice Inicial (Foco): {indice_caractere_inicial}", flush=True) # <--- NOVO
+        print(f"Limites Gerados: [{inicio_snippet}, {fim_snippet})", flush=True) # <--- NOVO
+        print(f"Comprimento do Snippet Gerado: {fim_snippet - inicio_snippet}", flush=True) # <--- NOVO
+        print("------------------------------", flush=True)
+        
         snippet_texto = conteudo[inicio_snippet:fim_snippet]
 
         snippet_destacado = _destacar_termos_no_snippet(snippet_texto, termos_validos)

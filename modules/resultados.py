@@ -94,21 +94,35 @@ class GerenciadorResultados:
         resultados_finais = []
         
         for item in resultados_pagina:
-            snippet = _gerar_snippet_formatado(
-                item.doc_id, 
-                item.query_termo, 
-                item.caractere_inicial, 
-                self._caminho_corpus, 
-                self._mapa_categorias,
-                self._todos_os_termos
-            )
+            print(f"[DEBUG RESULTADOS] Processando item ID: {item.doc_id}", flush=True)
+            snippet = "[Snippet não gerado]"
+            try:
+                snippet = _gerar_snippet_formatado(
+                    item.doc_id, 
+                    item.query_termo, 
+                    item.caractere_inicial, 
+                    self._caminho_corpus, 
+                    self._mapa_categorias,
+                    self._todos_os_termos
+                )
+                # --- DEBUG SUCESSO: Checa se a chamada retornou ---
+                print(f"[DEBUG RESULTADOS] Snippet gerado com sucesso para {item.doc_id}", flush=True)
+
+            except Exception as e:
+                # Captura qualquer falha que ocorra no snippet
+                print(f"[ERRO GESTÃO] Falha ao gerar snippet para {item.doc_id}: {e}", flush=True)
+                snippet = "[Falha na geração do snippet]"
 
             # Formata o id do doc de (int, int) para string
-            categoria_nome = self._mapa_categorias.get(item.doc_id[0], 'desconhecida')
-            doc_id_str = f"{categoria_nome}/{item.doc_id[1]:03d}"
+            categoria_int, numero_int = item.doc_id
+            categoria_nome = self._mapa_categorias.get(categoria_int, 'desconhecida')
+            doc_num_str = f"{numero_int:03d}"
+            doc_id_completo_str = f"{categoria_nome}/{doc_num_str}"
 
             resultados_finais.append({
-                'id': doc_id_str,
+                'id_completo': doc_id_completo_str,
+                'categoria': categoria_nome,
+                'id_num': doc_num_str,
                 'score': f"{item.relevancia:.4f}",
                 'snippet': snippet
             })
