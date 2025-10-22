@@ -11,9 +11,11 @@ app.secret_key = "senha_super_secreta"
 
 corpus_index = None
 gerenciador_de_busca = None
+caminho_corpus = None
+mapa_categorias_reverso = None
 
 def inicializar_indice():
-    global corpus_index, gerenciador_de_busca
+    global corpus_index, caminho_corpus, mapa_categorias_reverso, gerenciador_de_busca
     caminho_indice_salvo = "data/indice.dat" 
     caminho_relativo = './bbc'
     caminho_corpus = os.path.abspath(os.path.join(os.path.dirname(__file__), caminho_relativo))
@@ -33,7 +35,7 @@ def inicializar_indice():
         
         if corpus_index.estatisticas_corpus:
             print("\nSUCESSO: O índice foi criado e carregado na memória") # DEBUG
-            corpus_index.imprimir_estatisticas(limite=10)
+            # corpus_index.imprimir_estatisticas(limite=10)
             os.makedirs(os.path.dirname(caminho_indice_salvo), exist_ok=True)
             corpus_index.salvar_em_disco(caminho_indice_salvo)
             indice_carregado_ou_construido = True
@@ -73,9 +75,9 @@ def search_results():
     if 'historico' not in session:
         session['historico'] = []
 
-    resultados = []
+    resultados_pagina = []
     termo = None
-    num_pagina = 1 
+    pagina_atual = 1
     tamanho_pagina_fixo = 10
     tem_proxima_pagina = False
     
@@ -93,32 +95,45 @@ def search_results():
     
     elif request.method == 'GET':
         termo = request.args.get('termo')
-        
         try:
-            num_pagina = int(request.args.get('page', 1))
-            if num_pagina < 1:
-                num_pagina = 1
+            pagina_atual = int(request.args.get('page', 1))
+            if pagina_atual < 1:
+                pagina_atual = 1
         except ValueError:
-            num_pagina = 1
+            pagina_atual = 1
     
     if termo and gerenciador_de_busca:
         try:
-            resultados = gerenciador_de_busca.executar_busca(termo, num_pagina=num_pagina, tamanho_pagina=tamanho_pagina_fixo)
+            print(f"[APP_DEBUG] Chamando executar_busca para termo='{termo}', pagina={pagina_atual}", flush=True)
+            retorno_busca = gerenciador_de_busca.executar_busca(
+                termo, 
+                num_pagina=pagina_atual, 
+                tamanho_pagina=tamanho_pagina_fixo
+            )
+            print(f"[APP_DEBUG] executar_busca retornou: {retorno_busca}")
+            resultados_pagina = retorno_busca
             
-            if resultados is None: 
-                resultados = [{'id': 'ERRO', 'score': 'N/A', 'snippet': 'Consulta inválida (erro de parsing).'} ]
-            
-            tem_proxima_pagina = len(resultados) == tamanho_pagina_fixo
+            if resultados_pagina is None: 
+                resultados_pagina = [{'id': 'ERRO', 'score': 'N/A', 'snippet': 'Consulta inválida (erro de parsing).'} ]
+                tem_proxima_pagina = False
+            elif not resultados_pagina and pagina_atual > 1:
+                print(f"[INFO Busca] Página {pagina_atual} vazia para '{termo}', redirecionando para página 1.")
+                return redirect(url_for('search_results', termo=termo, page=1))
+            else:
+                tem_proxima_pagina = len(resultados_pagina) == tamanho_pagina_fixo
         except Exception as e:
             print(f"Erro durante o processamento da busca para '{termo}': {e}")
             traceback.print_exc()
+            resultados_pagina = [{'id_completo': 'ERRO Interno', 'categoria':'','id_num':'', 'score': 'N/A', 'snippet': f'Falha na busca: {e}'}]
             tem_proxima_pagina = False
-            resultados = [{'id': 'ERRO', 'score': 'N/A', 'snippet': f'Falha na busca: {e}'}]
-    else:
-        tem_proxima_pagina = False
-        tamanho_pagina_fixo = 10
         
-    return render_template ('search_results.html', termo=termo, resultados=resultados,num_pagina=num_pagina, tamanho_pagina=tamanho_pagina_fixo, tem_proxima_pagina=tem_proxima_pagina)
+    return render_template (
+        'search_results.html',
+        termo=termo,
+        resultados=resultados_pagina,
+        pagina_atual=pagina_atual,         
+        tem_proxima_pagina=tem_proxima_pagina 
+    )
 
 @app.route('/historico', methods=['GET', 'POST'])
 def historico():
@@ -132,6 +147,31 @@ def historico():
 
     return render_template('historico.html', historico = session['historico'])
 
+@app.route('/documento/<categoria>/<id_documento>', methods=['GET'])
+def exibir_documento(categoria, id_documento):
+    """Exibe o conteúdo inteiro de um documento com base na categoria e ID dele."""
+    global caminho_corpus
+    
+    id_formatado = f"{int(id_documento):03d}" 
+    nome_arquivo = f"{id_formatado}.txt"
+    
+    caminho_arquivo = os.path.join(caminho_corpus, categoria, nome_arquivo)
+    print(f"DEBUG: Tentando ler o arquivo: {caminho_arquivo}") # DEBUG
+    
+    if not os.path.exists(caminho_arquivo):
+        print(f"DEBUG: Arquivo não encontrado em {caminho_arquivo}") # DEBUG
+        return f"Documento não encontrado: {categoria}/{id_documento}", 404
+    
+    with open(caminho_arquivo, 'r', encoding='latin-1') as f:
+        conteudo = f.read()
+            
+    documento = {
+        'categoria': categoria, 
+        'id': id_formatado, 
+        'conteudo': conteudo
+    }
+    return render_template('exibir_documento.html', documento=documento)
+
 @app.route('/ajuda')
 def ajuda():
     return render_template('ajuda.html')
@@ -139,23 +179,77 @@ def ajuda():
 if __name__ == '__main__':
     inicializar_indice()
     
-    if corpus_index and corpus_index.estatisticas_corpus:
-        from modules.search import ArvoreParsing # debug
-        consulta_teste = "apple AND banana OR (car AND NOT ship)" # debug
+    print("\n[DEBUG MAIN] Após inicializar_indice:")
+    print(f"[DEBUG MAIN] Valor de corpus_index: {corpus_index}")
+    print(f"[DEBUG MAIN] Valor de gerenciador_de_busca: {gerenciador_de_busca}")
+    print(f"[DEBUG MAIN] Verificando a condição 'if corpus_index and gerenciador_de_busca:'...")
+    
+    if corpus_index and gerenciador_de_busca:
+        
+        # --- BLOCO DE TESTE MANUAL DA BUSCA ---
+        print("\n====================================")
+        print("     TESTE MANUAL DA BUSCA")
+        print("====================================")
+        
+        consulta_teste = "time" # A consulta que você quer testar
+        pagina_teste = 1
+        itens_por_pagina_teste = 10
+        
+        print(f"Executando busca para: '{consulta_teste}' (Página {pagina_teste})")
         
         try:
-            parser_teste = ArvoreParsing(consulta_teste)
-            parser_teste.gera_parsing_tokens()
+            # Chama o método principal do seu gerenciador de busca
+            resultados_pagina_teste = gerenciador_de_busca.executar_busca(
+                consulta_teste, 
+                num_pagina=pagina_teste, 
+                tamanho_pagina=itens_por_pagina_teste
+            )
             
-            print("\n====================================")
-            print("TESTE MANUAL: DEBUG ÁRVORE DE PARSING")
-            parser_teste.imprimir_debug() # AQUI ESTÁ A CHAMADA
-            print("====================================")
+            # Verifica o que foi retornado
+            if resultados_pagina_teste is None:
+                print("\nRESULTADO DO TESTE: A busca retornou None (Provável erro de parsing da query).")
+            elif not resultados_pagina_teste:
+                print(f"\nRESULTADO DO TESTE: A busca não encontrou resultados para '{consulta_teste}'.")
+            else:
+                print(f"\nRESULTADO DO TESTE: Busca bem-sucedida! Total de resultados encontra")
+                print(f"Exibindo resultados da Página {pagina_teste} ({len(resultados_pagina_teste)} itens):")
+                
+                # Imprime os resultados formatados (como iriam para o template)
+                import pprint 
+                pprint.pprint(resultados_pagina_teste)
 
-            resultado_a = corpus_index.trie.busca_palavra("a")
-            print(f"Resultado da busca por 'a': {resultado_a}")
+                # Você pode adicionar mais testes aqui, como pedir a página 2
+                # if total_resultados_teste > itens_por_pagina_teste:
+                #     print("\nTestando Página 2...")
+                #     resultados_pagina_2, _ = gerenciador_de_busca.executar_busca(consulta_teste, 2, itens_por_pagina_teste)
+                #     pprint.pprint(resultados_pagina_2)
+
         except Exception as e:
-            print(f"Erro ao testar o parsing: {e}")
+            print(f"\nERRO NO TESTE: Uma exceção ocorreu durante a chamada a executar_busca:")
+            traceback.print_exc() # Imprime o traceback completo do erro
+            
+        print("====================================")
+        print(" FIM DO TESTE MANUAL DA BUSCA")
+        print("====================================\n")
+        # --- FIM DO BLOCO DE TESTE ---
+        
+    #if corpus_index and corpus_index.estatisticas_corpus:
+        #from modules.search import ArvoreParsing # debug
+        #consulta_teste = "apple AND banana OR (car AND NOT ship)" # debug
+        
+        #try:
+            # parser_teste = ArvoreParsing(consulta_teste)
+            # parser_teste.gera_parsing_tokens()
+            
+            #print("\n====================================")
+            #print("TESTE MANUAL: DEBUG ÁRVORE DE PARSING")
+            #parser_teste.imprimir_debug() # AQUI ESTÁ A CHAMADA
+            #print("====================================")
+
+            #resultado_a = corpus_index.trie.busca_palavra("a")
+            #print(f"Resultado da busca por 'a': {resultado_a}")
+        #except Exception as e:
+            #print(f"Erro ao testar o parsing: {e}")
             
         #mapa_reverso_categoria = {c.value: c.name for c in Categoria}
         #if hasattr(corpus_index, 'trie'): 
