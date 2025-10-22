@@ -152,19 +152,21 @@ button:hover {
 }
 
 .arquivo-titulo {
+    font-size: 20px;
     margin-top: 0 !important; 
-    margin-bottom: 2px !important; 
+    margin-bottom: 6px !important; 
     font-weight: bold !important; 
     text-align: left;
 }
 
 .divisor {
     border: 0;
-    border-top: 1px solid #4a0638; 
-    margin: 5px 0 20px 0;
+    border-top: 2px solid #4a0638; 
+    margin: 7px 0 25px 0;
 }
 
 .snippet-texto {
+    font-size: 17px;
     text-align: justify;
     text-justify: inter-word; 
     font-weight: normal !important;

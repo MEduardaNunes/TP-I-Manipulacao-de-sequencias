@@ -75,6 +75,9 @@ def search_results():
 
     resultados = []
     termo = None
+    num_pagina = 1 
+    tamanho_pagina_fixo = 10
+    tem_proxima_pagina = False
     
     if request.method == 'POST':
         termo = request.form.get('mensagem')
@@ -90,20 +93,32 @@ def search_results():
     
     elif request.method == 'GET':
         termo = request.args.get('termo')
+        
+        try:
+            num_pagina = int(request.args.get('page', 1))
+            if num_pagina < 1:
+                num_pagina = 1
+        except ValueError:
+            num_pagina = 1
     
     if termo and gerenciador_de_busca:
         try:
-            resultados = gerenciador_de_busca.executar_busca(termo, num_pagina=1, tamanho_pagina=10)
+            resultados = gerenciador_de_busca.executar_busca(termo, num_pagina=num_pagina, tamanho_pagina=tamanho_pagina_fixo)
             
             if resultados is None: 
                 resultados = [{'id': 'ERRO', 'score': 'N/A', 'snippet': 'Consulta inválida (erro de parsing).'} ]
             
+            tem_proxima_pagina = len(resultados) == tamanho_pagina_fixo
         except Exception as e:
             print(f"Erro durante o processamento da busca para '{termo}': {e}")
             traceback.print_exc()
+            tem_proxima_pagina = False
             resultados = [{'id': 'ERRO', 'score': 'N/A', 'snippet': f'Falha na busca: {e}'}]
-    
-    return render_template('search_results.html', termo=termo, resultados=resultados)
+    else:
+        tem_proxima_pagina = False
+        tamanho_pagina_fixo = 10
+        
+    return render_template ('search_results.html', termo=termo, resultados=resultados,num_pagina=num_pagina, tamanho_pagina=tamanho_pagina_fixo, tem_proxima_pagina=tem_proxima_pagina)
 
 @app.route('/historico', methods=['GET', 'POST'])
 def historico():

@@ -36,8 +36,28 @@
                     </div>
                 {% endfor %}
             </ul>
+
+        <div class="paginacao-container" style="margin-top: 30px; text-align: center;">
+
+                {% if num_pagina > 1 %}
+                    <a href="{{ url_for('search_results', termo=termo, page=num_pagina - 1) }}">
+                        <button> &laquo; Anterior </button>
+                    </a>
+                {% endif %}
+
+                <span style="font-size: 1.1em; font-weight: bold; margin: 0 15px;">
+                    Página {{ num_pagina }}
+                </span>
+
+                {% if tem_proxima_pagina %}
+                    <a href="{{ url_for('search_results', termo=termo, page=num_pagina + 1) }}">
+                        <button> Próxima &raquo; </button>
+                    </a>
+                {% endif %}
+
+            </div>
         {% else %}
-            <p>Nenhum resultado encontrado para "{{ termo }}" Tente outros termos na página inicial.</p>
+            <p>Nenhum resultado encontrado para "{{ termo }}" na página {{ num_pagina }}. Tente outros termos na <a href="{{ url_for('home') }}">página inicial</a>.</p>
         {% endif %}
     </div>
 </body>
