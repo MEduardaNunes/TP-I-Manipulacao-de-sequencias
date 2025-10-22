@@ -11,9 +11,11 @@
 <body>
     <div class = "central">
         <div class="botao-topo-wrapper">
-            <button id = "botao-inicio" onclick = "window.history.back()" aria-label="Inicio">
-                <img src="{{ url_for('static', filename='icone-inicio.png') }}" alt="Inicio">
+            <a href = "{{ url_for('home') }}">
+                <button id = "botao-inicio" aria-label="Inicio">
+                    <img src="{{ url_for('static', filename='icone-inicio.png') }}" alt="Inicio">
                 </button>
+            </a>
         </div>
     </div>
     
