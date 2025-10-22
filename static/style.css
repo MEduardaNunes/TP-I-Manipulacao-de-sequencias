@@ -144,3 +144,30 @@ button:hover {
     text-decoration: underline;
     color: #ffffff;
 }
+
+.resultado-item {
+    margin-bottom: 12px;
+    padding: 0;
+    text-align: left;
+}
+
+.arquivo-titulo {
+    margin-top: 0 !important; 
+    margin-bottom: 2px !important; 
+    font-weight: bold !important; 
+    text-align: left;
+}
+
+.divisor {
+    border: 0;
+    border-top: 1px solid #4a0638; 
+    margin: 5px 0 20px 0;
+}
+
+.snippet-texto {
+    text-align: justify;
+    text-justify: inter-word; 
+    font-weight: normal !important;
+    margin-top: 0 !important;
+    margin-bottom: 5px !important;
+}

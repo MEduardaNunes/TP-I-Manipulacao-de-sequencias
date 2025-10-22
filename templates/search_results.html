@@ -15,8 +15,6 @@
     </div>
     
     <div class="central">
-        <h1> Resultados da Busca </h1>
-
         {% if termo %}
             <h2> Busca por: "{{ termo }}" </h2>
         {% endif %}
@@ -25,10 +23,17 @@
             <h3>Resultados encontrados: {{ resultados | length }}</h3>
             <ul>
                 {% for resultado in resultados %}
-                    <li style="margin-bottom: 20px; border: 1px solid #ccc; padding: 10px;">
-                        <strong>ID:</strong> {{ resultado.id }} (Score: {{ resultado.score }})<br>
-                        <strong>Snippet:</strong> {{ resultado.snippet | safe }}
-                    </li>
+                    <div class="resultado-item">
+                        <p class="arquivo-titulo" style="font-weight: bold; margin-bottom: 5px;">
+                            Arquivo: {{ resultado.id }}
+                        </p>
+                        
+                        <p class="snippet-texto" style="font-weight: normal;"> 
+                            {{ resultado.snippet | safe }}
+                        </p>
+                        
+                        <hr class="divisor">
+                    </div>
                 {% endfor %}
             </ul>
         {% else %}
