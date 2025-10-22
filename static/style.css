@@ -208,13 +208,13 @@ button:hover {
     align-items: center;
     justify-content: center;
 
-    color: inherit; 
+    color: white; 
     border-radius: 15px;
     margin: 0;
 }
 
 #botao-inicio:hover {
-    background-color: #2d0422; 
+    background-color: #360429; 
 }
 
 #botao-inicio img {
@@ -264,7 +264,7 @@ a.resultado-link:hover .resultado-item {
 
 #botao-voltar-doc { 
     font-family: 'DM Sans', sans-serif;
-    padding: 9px 15px; /* Padding para texto */
+    padding: 9px 15px; 
     font-size: 16px;
     border-radius: 5px;
     border: none;
