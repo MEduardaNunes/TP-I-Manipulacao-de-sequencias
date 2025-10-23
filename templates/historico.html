@@ -26,7 +26,9 @@
         </div>
         
         <div class = "item">
-            <button id = "botao-voltar" onclick = "window.history.back()"> Voltar </button>
+            <button id = "botao-voltar" onclick = "window.history.back()"> 
+                <img src="{{ url_for('static', filename='voltar.png') }}" alt="Voltar">
+            </button>
         </div>
     </div>
     
@@ -40,7 +42,7 @@
 
         <form method = "POST">
             <input type = "text" id = "mensagem" name = "mensagem" placeholder = "Insira sua busca aqui..." required>
-            <button type = "submit"> Buscar </button>
+            <button type = "submit" id = "botao-busca"> Buscar </button>
         </form>
 
         {% if resposta %}
