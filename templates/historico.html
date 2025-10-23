@@ -10,13 +10,11 @@
 <body>
     <div class = "container">
         <div class = "item">
-            <div class = "botao-topo-wrapper">
-                <a href = "{{ url_for('home') }}">
-                    <button id = "botao-inicio" aria-label="Inicio">
-                        <img src="{{ url_for('static', filename='icone-inicio.png') }}" alt="Inicio">
-                    </button>
-                </a>
-            </div>
+            <a href = "{{ url_for('home') }}">
+                 <button id = "botao-inicio" aria-label="Inicio">
+                    <img src="{{ url_for('static', filename='icone-inicio.png') }}" alt="Inicio">
+                </button>
+            </a>
         </div>
         
         <div class = "item">
