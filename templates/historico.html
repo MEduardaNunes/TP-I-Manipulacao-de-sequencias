@@ -53,7 +53,7 @@
             <h3> HISTÓRICO DE BUSCAS </h3>
             <ul> 
                 {% for termo in historico|reverse %}
-                    <li><a class = "item_historico" href = "{{ url_for('home') }}?termo={{ termo }}">
+                    <li><a class = "item_historico" href = "{{ url_for('search_results') }}?termo={{ termo }}">
                         {{ termo }}
                     </a></li>
                 {% endfor %}
