@@ -19,7 +19,9 @@
 
         <div class = "item">
             <a href = "{{ url_for('historico') }}">
-                <button id = "historico"> Histórico </button>
+                <button id = "historico">
+                    <img src="{{ url_for('static', filename='historico.png') }}" alt="Histórico">
+                </button>
             </a>
         </div>
 

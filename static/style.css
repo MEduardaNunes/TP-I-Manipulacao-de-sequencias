@@ -278,3 +278,27 @@ a.resultado-link:hover .resultado-item {
 #botao-voltar-doc:hover {
     background-color: #2d0422;
 }
+
+#historico {
+    display: inline-flex; 
+    align-items: center;
+    justify-content: center;
+}
+
+#historico img {
+    height: 23px; 
+    width: auto;  
+    display: block;
+}
+
+#ajuda {
+    display: inline-flex; 
+    align-items: center;
+    justify-content: center;
+}
+
+#ajuda img {
+    height: 40px; 
+    width: auto;  
+    display: block;
+}

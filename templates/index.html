@@ -10,22 +10,18 @@
 <body>
     <div class = "container">
         <div class = "item">
-            <a href = "{{ url_for('home') }}">
-                <button id = "botao-inicio" aria-label="Inicio">
-                    <img src="{{ url_for('static', filename='icone-inicio.png') }}" alt="Inicio">
+            <a href = "{{ url_for('historico') }}">
+                <button id = "historico">
+                    <img src="{{ url_for('static', filename='historico.png') }}" alt="Histórico">
                 </button>
             </a>
         </div>
 
         <div class = "item">
-            <a href = "{{ url_for('historico') }}">
-                <button id = "historico"> Histórico </button>
-            </a>
-        </div>
-
-        <div class = "item">
             <a href = "{{ url_for('ajuda') }}">
-                <button id = "ajuda"> Ajuda </button>
+                <button id = "ajuda"> 
+                    <img src="{{ url_for('static', filename='ajuda.png') }}" alt="Ajuda">
+                </button>
             </a>
         </div>
     </div>

@@ -16,15 +16,17 @@
                 </button>
             </a>
         </div>
+
+        <div class = "item">
+            <a href = "{{ url_for('ajuda') }}">
+                <button id = "ajuda"> 
+                    <img src="{{ url_for('static', filename='ajuda.png') }}" alt="Ajuda">
+                </button>
+            </a>
+        </div>
         
         <div class = "item">
             <button id = "botao-voltar" onclick = "window.history.back()"> Voltar </button>
-        </div>
-
-        <div class = "item">
-            <a href = "{{ url_for('historico') }}">
-                <button id = "historico"> Histórico </button>
-            </a>
         </div>
     </div>
     
