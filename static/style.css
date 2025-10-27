@@ -194,6 +194,7 @@ button:hover {
 
 .pagina-atual-texto {
     text-decoration: none;
+    padding: 6px;
 }
 
 .botao-pagina:hover {
