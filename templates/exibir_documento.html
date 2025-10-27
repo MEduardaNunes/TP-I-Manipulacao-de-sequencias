@@ -6,13 +6,15 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     </head>
 <body>
-    <div class="central">
-        <div class="botao-topo-wrapper">
-             <button onclick="window.history.back()" title="Voltar" aria-label="Voltar" id="botao-inicio">
-                 &laquo; Voltar
-             </button>
+    <div class = "container">
+        <div class = "item">
+            <button id = "botao-voltar" onclick = "window.history.back()"> 
+                <img src="{{ url_for('static', filename='voltar.png') }}" alt="Voltar">
+            </button>
         </div>
+    </div>
 
+    <div class="central">
         <h1>{{ documento.categoria | capitalize }}/{{ documento.id }}</h1> 
         
         <hr>
