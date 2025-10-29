@@ -2,7 +2,7 @@ import re
 
 def obter_caracteres_validos():
     """ Define o conjunto de caracteres aceitos como válidos para formar palavras."""
-    return {"'", "-", ".", "&", "%", "$", ",", "!", "?", "#", "@", ";", "(", ")", "[", "]", "{", "}", "_", "+", "=", "*", "/", ":", "~", "^", "<", ">", "|", "\\"}
+    return {"'", "-", ".", "&", "%", "$", ",", "!", "?", "#", "@", ";", "[", "]", "{", "}", "_", "+", "=", "*", "/", ":", "~", "^", "<", ">", "|", "\\"}
 
 def processar_texto(texto):
     """
