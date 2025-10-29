@@ -36,7 +36,7 @@ def processar_texto(texto):
         else:
             # Se não for um caractere válido, é considerado um separador
             if termo_em_formacao: 
-                tokens_com_posicao.adicionar((termo_em_formacao, inicio_termo_em_formacao))  # Adiciona o termo e seu índice
+                tokens_com_posicao.append((termo_em_formacao, inicio_termo_em_formacao))  # Adiciona o termo e seu índice
                 termo_em_formacao = "" # Reseta para o próximo termo
                 inicio_termo_em_formacao = -1
 

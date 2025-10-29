@@ -1,5 +1,5 @@
 from TrieCompacta import TrieCompacta, NoTrie
-from .utils import ListaLigada, processar_texto
+from .utils import processar_texto
 from .models import Documento, Categoria
 import os
 import math
@@ -129,7 +129,7 @@ class Corpus:
             }
     
     def _ler_documentos(self, caminho_corpus):
-        documents = ListaLigada()
+        documents = []
         
         for categoria in os.listdir(caminho_corpus):
             caminho_categoria = os.path.join(caminho_corpus, categoria)
@@ -142,7 +142,7 @@ class Corpus:
                             with open(caminho_arquivo, 'r', encoding='latin-1') as f:
                                 conteudo = f.read()
                             doc = Documento(categoria, doc_id_num, conteudo)
-                            documents.adicionar(doc)
+                            documents.append(doc)
                         except Exception as e:
                             print(f"Erro ao ler o arquivo {caminho_arquivo}: {e}")
         
