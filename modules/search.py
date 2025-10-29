@@ -107,7 +107,7 @@ class ArvoreParsing:
 
         if token is None:
             raise ValueError(f"Fim inesperado de tokens, esperado \" {valor_esperado} \"")
-
+        
         if esperado and token != esperado:
             raise ValueError(f"Token esperado \" {valor_esperado} \" diferente do token atual \" {token} \"")
 
@@ -235,8 +235,9 @@ class ArvoreParsing:
 
             return no_atual
         
-        elif re.match(r"[a-z0-9\-']+$", self.token_atual() or "") and self.token_atual() not in ("AND", "OR", "NOT", "(", ")"):
+        elif re.match(r"[a-zá-úA-ZÁ-Ú0-9\-'\%\&\$\#\,\£]+$", self.token_atual() or "") and self.token_atual() not in ("AND", "OR", "NOT", "(", ")"):
             palavra = self.consome_token()
+            print(f"Token gerado: {self.token_atual()}", flush=True)
             return NoParsing(palavra)
         
         else:

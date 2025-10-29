@@ -233,26 +233,26 @@ if __name__ == '__main__':
         print("====================================\n")
         # --- FIM DO BLOCO DE TESTE ---
         
-    #if corpus_index and corpus_index.estatisticas_corpus:
-        #from modules.search import ArvoreParsing # debug
-        #consulta_teste = "apple AND banana OR (car AND NOT ship)" # debug
+    if corpus_index and corpus_index.estatisticas_corpus:
+        from modules.search import ArvoreParsing # debug
+        consulta_teste = "Warner's" # debug
         
-        #try:
-            # parser_teste = ArvoreParsing(consulta_teste)
-            # parser_teste.gera_parsing_tokens()
+        try:
+            parser_teste = ArvoreParsing(consulta_teste)
+            parser_teste.gera_parsing_tokens()
             
-            #print("\n====================================")
-            #print("TESTE MANUAL: DEBUG ÁRVORE DE PARSING")
-            #parser_teste.imprimir_debug() # AQUI ESTÁ A CHAMADA
-            #print("====================================")
+            print("\n====================================")
+            print("TESTE MANUAL: DEBUG ÁRVORE DE PARSING")
+            parser_teste.imprimir_debug() 
+            print("====================================")
 
-            #resultado_a = corpus_index.trie.busca_palavra("a")
-            #print(f"Resultado da busca por 'a': {resultado_a}")
-        #except Exception as e:
-            #print(f"Erro ao testar o parsing: {e}")
+            resultado_a = corpus_index.trie.busca_palavra("consulta_teste")
+            print(f"Resultado da busca por '{consulta_teste}': {resultado_a}")
+        except Exception as e:
+            print(f"Erro ao testar o parsing: {e}")
             
-        #mapa_reverso_categoria = {c.value: c.name for c in Categoria}
-        #if hasattr(corpus_index, 'trie'): 
-            #rint("\nDEBUG: Imprimindo amostra da Trie")
-            #corpus_index.trie.imprimir_arvore(mapa_categorias=mapa_reverso_categoria, limite=5)
+        mapa_reverso_categoria = {c.value: c.name for c in Categoria}
+        if hasattr(corpus_index, 'trie'): 
+            print("\nDEBUG: Imprimindo amostra da Trie")
+            corpus_index.trie.imprimir_arvore(mapa_categorias=mapa_reverso_categoria, limite=5)
     app.run(debug=True)

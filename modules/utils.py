@@ -1,5 +1,9 @@
 import re
 
+def _get_caracteres_validos_palavra():
+    """ Define o conjunto de caracteres aceitos como válidos para formar palavras."""
+    return {"'", "-", ".", "&", "%", "$",","}
+
 def processar_texto(texto):
     """
     Normaliza um texto: converte para minúsculas e extrai palavras/números,
@@ -15,22 +19,26 @@ def processar_texto(texto):
                                Ex: [('palavra1', 0), ('123', 9), ...]
     """
     
-    tokens_com_posicao = [] # Lista para armazenar as tuplas (termo, indice_char)
+    tokens_com_posicao = ListaNaoLigada() # Lista para armazenar as tuplas (termo, indice_char)
     termo_atual = ""
     inicio_termo_atual = -1 # Guarda o índice do caractere onde o termo atual começou
     
-    texto_com_espaco = texto + " "
+    texto_com_espaco = texto + " " 
+    
+    caracteres_validos = _get_caracteres_validos_palavra()
+    
+    regex_valido = re.compile(r'[A-Za-zá-úÁ-ÚãõçÇ0-9]') # Permite letras com acento, normais, números e caracteres especiais
     
     for indice_char, caractere in enumerate(texto_com_espaco):
-        # Verifica se o caractere é uma letra ou um número.
-        if caractere.isalnum():
+        # Verifica se o caractere é válido (letras, números ou símbolos permitidos)
+        if regex_valido.match(caractere) or caractere in caracteres_validos:
             if not termo_atual:
                 inicio_termo_atual = indice_char
             termo_atual += caractere.lower()
         else:
-            # Se não for, é um separador
-            if termo_atual: # Verifica se o termo atual não está vazio
-                tokens_com_posicao.append((termo_atual, inicio_termo_atual))
+            # Se não for um caractere válido, é considerado um separador
+            if termo_atual: 
+                tokens_com_posicao.adicionar((termo_atual, inicio_termo_atual))  # Adiciona o termo e seu índice
                 termo_atual = "" # Reseta para o próximo termo
                 inicio_termo_atual = -1
 
@@ -39,7 +47,6 @@ def processar_texto(texto):
 def normaliza_query(query):
     """
     Normaliza a query, convertando palavras para minúsculo (com exceção os operadores)
-    e tira apóstofres possesivos (como Carl's -> Carl).
 
     Parâmetros:
         query (str): A string a ser processada.
@@ -49,13 +56,12 @@ def normaliza_query(query):
     """
     query_normalizada = ""
     palavras_query = query.replace('(', ' ( ').replace(')', ' ) ').split()
-
+    
     for palavra in palavras_query:
         if palavra in ("AND", "OR", "NOT", "(", ")"):
             query_normalizada += palavra + " "
 
         else:
-            palavra = re.sub(r"['’]s$", "", palavra)
             query_normalizada += palavra.lower() + " "
 
     return query_normalizada.strip()
@@ -125,7 +131,7 @@ class ListaLigada():
 class ListaNaoLigada:
     def __init__(self):
         self.tamanho = 0  
-        self.capacidade = 1  
+        self.capacidade = 10
         self._array_interno = self._criar_array(self.capacidade)
 
     def _criar_array(self, capacidade):
@@ -135,7 +141,9 @@ class ListaNaoLigada:
         return self.tamanho
 
     def __repr__(self):
-        elementos = [repr(self._array_interno[i]) for i in range(self.tamanho)]
+        elementos = [repr(self._array_interno[i]) for i in range(min(self.tamanho, 20))]
+        if self.tamanho > 20:
+            return f"ListaNaoLigada([{', '.join(elementos)}...])"
         return f"ListaNaoLigada([{', '.join(elementos)}])"
 
     def _redimensionar(self, nova_capacidade):
