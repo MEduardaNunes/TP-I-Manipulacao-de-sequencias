@@ -1,5 +1,37 @@
 import re
 
+def _aplicar_escape(valor: str) -> str:
+    """Escapa os delimitadores usados no formato do arquivo."""
+    # Escapa a barra invertida (primeiro!) para não afetar escapes futuros
+    valor = valor.replace('\\', '\\\\')
+    
+    # Escapa os delimitadores críticos usados na estrutura do arquivo (:, , ( ))
+    valor = valor.replace(':', '\\:')
+    valor = valor.replace(',', '\\,')
+    valor = valor.replace('(', '\\(')
+    valor = valor.replace(')', '\\)')
+    
+    # Escapa a aspa simples, usada como delimitador em 'parse_linha_trie'
+    valor = valor.replace("'", "\\'") 
+    
+    return valor
+
+def _remover_escape(valor_escapado: str) -> str:
+    """Reverte o escalonamento dos delimitadores."""
+    # O re.sub é o método mais seguro para remover escapes reversos
+    
+    # 1. Substituir sequências de escape:
+    valor = valor_escapado.replace('\\:', ':')
+    valor = valor.replace('\\,', ',')
+    valor = valor.replace('\\(', '(')
+    valor = valor.replace('\\)', ')')
+    valor = valor.replace("\\'", "'")
+    
+    # 2. Restaurar barras invertidas originais (substituindo \\\\ por \)
+    valor = valor.replace('\\\\', '\\')
+    
+    return valor
+
 def obter_caracteres_validos():
     """ Define o conjunto de caracteres aceitos como válidos para formar palavras."""
     return {"'", "-", ".", "&", "%", "$", ",", "!", "?", "#", "@", ";", "[", "]", "{", "}", "_", "+", "=", "*", "/", ":", "~", "^", "<", ">", "|", "\\"}
@@ -156,3 +188,4 @@ def mergesort(lista, chave):
 
     # Combina as metades ordenadas
     return _merge(esquerda, direita, chave)
+

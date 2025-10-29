@@ -1,41 +1,9 @@
 from TrieCompacta import TrieCompacta, NoTrie
-from .utils import processar_texto
+from .utils import processar_texto, _aplicar_escape, _remover_escape
 from .models import Documento, Categoria
 import os
 import math
 import re
-
-def _aplicar_escape(valor: str) -> str:
-    """Escapa os delimitadores usados no formato do arquivo."""
-    # Escapa a barra invertida (primeiro!) para não afetar escapes futuros
-    valor = valor.replace('\\', '\\\\')
-    
-    # Escapa os delimitadores críticos usados na estrutura do arquivo (:, , ( ))
-    valor = valor.replace(':', '\\:')
-    valor = valor.replace(',', '\\,')
-    valor = valor.replace('(', '\\(')
-    valor = valor.replace(')', '\\)')
-    
-    # Escapa a aspa simples, usada como delimitador em 'parse_linha_trie'
-    valor = valor.replace("'", "\\'") 
-    
-    return valor
-
-def _remover_escape(valor_escapado: str) -> str:
-    """Reverte o escalonamento dos delimitadores."""
-    # O re.sub é o método mais seguro para remover escapes reversos
-    
-    # 1. Substituir sequências de escape:
-    valor = valor_escapado.replace('\\:', ':')
-    valor = valor.replace('\\,', ',')
-    valor = valor.replace('\\(', '(')
-    valor = valor.replace('\\)', ')')
-    valor = valor.replace("\\'", "'")
-    
-    # 2. Restaurar barras invertidas originais (substituindo \\\\ por \)
-    valor = valor.replace('\\\\', '\\')
-    
-    return valor
 
 def parse_linha_trie(linha):
     """
@@ -366,33 +334,33 @@ class Corpus:
             self._salvar_no_recursivo(arquivo, filho, profundidade + 1)         
     
     # PARA DEBUG
-    def imprimir_estatisticas(self, limite=10):
-        """
-        Imprime as estatísticas do corpus de forma legível para debugging.
+    # def imprimir_estatisticas(self, limite=10):
+    #     """
+    #     Imprime as estatísticas do corpus de forma legível para debugging.
 
-        Parâmetros:
-            limite (int): O número máximo de termos a serem impressos.
-                          Útil para não poluir a tela com milhares de linhas.
-        """
-        print("\n--- Estatísticas do Corpus ---")
-        if not self.estatisticas_corpus:
-            print("(Nenhuma estatística calculada)")
-            return
+    #     Parâmetros:
+    #         limite (int): O número máximo de termos a serem impressos.
+    #                       Útil para não poluir a tela com milhares de linhas.
+    #     """
+    #     print("\n--- Estatísticas do Corpus ---")
+    #     if not self.estatisticas_corpus:
+    #         print("(Nenhuma estatística calculada)")
+    #         return
         
-        count = 0
-        for termo, stats in self.estatisticas_corpus.items():
-            if count >= limite:
-                print(f"\n... e mais {len(self.estatisticas_corpus) - limite} termos.")
-                break
+    #     count = 0
+    #     for termo, stats in self.estatisticas_corpus.items():
+    #         if count >= limite:
+    #             print(f"\n... e mais {len(self.estatisticas_corpus) - limite} termos.")
+    #             break
             
-            media = stats['media']
-            desvio = stats['desvio_padrao']
+    #         media = stats['media']
+    #         desvio = stats['desvio_padrao']
             
-            print(f"- Termo: '{termo}'")
-            print(f"    Média de Frequência: {media:.4f}")
-            print(f"    Desvio Padrão: {desvio:.4f}")
+    #         print(f"- Termo: '{termo}'")
+    #         print(f"    Média de Frequência: {media:.4f}")
+    #         print(f"    Desvio Padrão: {desvio:.4f}")
             
-            count += 1
+    #         count += 1
                                 
                     
 
