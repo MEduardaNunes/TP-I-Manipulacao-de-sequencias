@@ -4,6 +4,15 @@ def obter_caracteres_validos():
     """ Define o conjunto de caracteres aceitos como válidos para formar palavras."""
     return {"'", "-", ".", "&", "%", "$", ",", "!", "?", "#", "@", ";", "[", "]", "{", "}", "_", "+", "=", "*", "/", ":", "~", "^", "<", ">", "|", "\\"}
 
+def _get_caracteres_validos_palavra():
+    """ Define o set de caracteres INTERNOS permitidos."""
+    # Ajustado: '.' pode ser interno (e.g.) mas também externo. '-' e "'" são tipicamente internos.
+    return frozenset(["'", "-"]) 
+
+def _get_simbolos_standalone_indexaveis():
+    """ Define símbolos que devem ser indexados como tokens separados."""
+    return frozenset([".", "&", "%", "$"]) # Adicione outros se necessário (ex: ',', ';')
+
 def processar_texto(texto):
     """
     Normaliza um texto: converte para minúsculas, e extrai o índice do caractere inicial de cada um no texto original.
@@ -18,27 +27,36 @@ def processar_texto(texto):
     """
     
     tokens_com_posicao = [] # Lista para armazenar as tuplas (termo, indice_char)
-    termo_em_formacao = ""
-    inicio_termo_em_formacao = -1 # Guarda o índice do caractere onde o termo atual começou
     
-    texto_com_espaco = texto + " " 
+    # --- PADRÃO REGEX ---
+    # 1. Palavras: Sequências de letras/números que PODEM conter '-' ou "'" INTERNAMENTE.
+    #    Ex: state-of-the-art, can't, word123
+    #    Regex: r'\b[a-z0-9]+(?:[-'][a-z0-9]+)*\b'
+    # 2. Números: Sequências de dígitos, possivelmente com '.' ou ',' (ajuste se necessário)
+    #    Ex: 123, 1.500, 50% (o % será capturado separadamente se não for incluído aqui)
+    #    Regex: r'\b\d+(?:[.,]\d+)*\b' 
+    # 3. Símbolos Standalone: Captura os símbolos definidos (&, %, $, .)
+    #    Regex: r'[.&%$]' (Adapte para incluir outros como ',')
+
+    # PADRÃO COMBINADO (A ordem importa: palavras primeiro para evitar que '-' seja pego sozinho)
+    # Adicionamos os símbolos standalone escapados
     
-    caracteres_validos = obter_caracteres_validos()
+    simbolos_pattern = '[' + re.escape("".join(_get_simbolos_standalone_indexaveis())) + ']'
     
-    regex_valido = re.compile(r'[A-Za-zá-úÁ-ÚãõçÇ0-9]') # Permite letras com acento, normais, números e caracteres especiais
+    # Padrão final: Palavras com hífens/apóstrofos | Números | Símbolos standalone
+    # Usamos re.finditer para obter os objetos match e seus índices
+    # O padrão para palavras é simplificado para [a-z0-9'-]+ para capturar hífens/apóstrofos
+    padrao = re.compile(r"([a-z0-9'" + re.escape("-") + r"]+)|(" + simbolos_pattern + r")", re.IGNORECASE)
     
-    for indice_char, caractere in enumerate(texto_com_espaco):
-        # Verifica se o caractere é válido (letras, números ou símbolos permitidos)
-        if regex_valido.match(caractere) or caractere in caracteres_validos:
-            if not termo_em_formacao:
-                inicio_termo_em_formacao = indice_char
-            termo_em_formacao += caractere.lower()
-        else:
-            # Se não for um caractere válido, é considerado um separador
-            if termo_em_formacao: 
-                tokens_com_posicao.append((termo_em_formacao, inicio_termo_em_formacao))  # Adiciona o termo e seu índice
-                termo_em_formacao = "" # Reseta para o próximo termo
-                inicio_termo_em_formacao = -1
+    for match in padrao.finditer(texto):
+        token = match.group(0) # Pega o texto completo do match
+        indice_char = match.start() # Pega o índice inicial
+
+        # Normaliza para minúsculas
+        token_normalizado = token.lower()
+        
+        # Adiciona à lista
+        tokens_com_posicao.append((token_normalizado, indice_char))
 
     return tokens_com_posicao
 

@@ -5,8 +5,37 @@ import os
 import math
 import re
 
-SECAO_ESTATISTICAS = "---ESTATISTICAS---\n"
-SECAO_TRIE = "---TRIE---\n"
+def _aplicar_escape(valor: str) -> str:
+    """Escapa os delimitadores usados no formato do arquivo."""
+    # Escapa a barra invertida (primeiro!) para não afetar escapes futuros
+    valor = valor.replace('\\', '\\\\')
+    
+    # Escapa os delimitadores críticos usados na estrutura do arquivo (:, , ( ))
+    valor = valor.replace(':', '\\:')
+    valor = valor.replace(',', '\\,')
+    valor = valor.replace('(', '\\(')
+    valor = valor.replace(')', '\\)')
+    
+    # Escapa a aspa simples, usada como delimitador em 'parse_linha_trie'
+    valor = valor.replace("'", "\\'") 
+    
+    return valor
+
+def _remover_escape(valor_escapado: str) -> str:
+    """Reverte o escalonamento dos delimitadores."""
+    # O re.sub é o método mais seguro para remover escapes reversos
+    
+    # 1. Substituir sequências de escape:
+    valor = valor_escapado.replace('\\:', ':')
+    valor = valor.replace('\\,', ',')
+    valor = valor.replace('\\(', '(')
+    valor = valor.replace('\\)', ')')
+    valor = valor.replace("\\'", "'")
+    
+    # 2. Restaurar barras invertidas originais (substituindo \\\\ por \)
+    valor = valor.replace('\\\\', '\\')
+    
+    return valor
 
 def parse_linha_trie(linha):
     """
@@ -19,21 +48,29 @@ def parse_linha_trie(linha):
         Uma tupla (valor, lista_invertida_dict) com os dados extraídos.
     """
     linha = linha.strip()
-
-    # Extrai a string do nó (encontra o conteúdo entre as primeiras aspas simples)
-    valor_encontrado = re.search(r"^\('([^']*)',", linha)
+    
+    valor_encontrado = re.search(r"^\('((?:\\.|[^'])*)',", linha)
+    
     if not valor_encontrado:
         # Lida com o caso da raiz, que é '(,{})'
         if linha == "(,{})":
             return "", {}
-        raise ValueError(f"Formato de linha inválido, não foi possível encontrar o valor: {linha}")
+        fallback_match = re.search(r"^\(([^,]*),", linha)
+        if fallback_match:
+             valor_repr = fallback_match.group(1)
+        else:
+            raise ValueError(f"Formato de linha inválido, não foi possível extrair o valor: {linha}")
+    else:
+        # Captura o grupo 1, que contém o valor entre as aspas (ex: 'a\\:b' ou '\\'s')
+        valor_repr = valor_encontrado.group(1)
+        
+    valor = _remover_escape(valor_repr)
     
-    valor = valor_encontrado.group(1) 
     lista_invertida_dict = {}
     
     # Encontra todas as ocorrências de "(cat, num): {'freq': f, 'pos': p}"
     padrao_ocorrencia = re.compile(r"\((\d+), (\d+)\): \{'frequencia': (\d+), 'primeira_posicao': (\d+)\}")
-
+    
     # Encontra todas as correspondências na string
     for match in padrao_ocorrencia.finditer(linha):
         cat_str, num_str, freq_str, pos_str = match.groups()
@@ -69,7 +106,7 @@ class Corpus:
         total_docs = len(documentos)
         
         if total_docs == 0:
-            print("[DEBUG] A lista de documentos está vazia. A indexação não pode continuar.")
+            print("[CONSTRUIR_INDICE] A lista de documentos está vazia. A indexação não pode continuar.")
             return
         
         # Dicionário temporário para armazenar as frequências de cada termo por documento
@@ -83,6 +120,14 @@ class Corpus:
             # Normalização do texto
             termos_com_posicao = processar_texto(doc.conteudo)
             for termo, indice_char in termos_com_posicao:
+                if re.fullmatch(r"([.,!?;:])\1+", termo):
+                    continue # Pula pontuações repetidas
+                else:
+                    termo = re.sub(r"^[,.!?;:]+|[,.!?;:]+$", "", termo)
+                    
+                if not termo: # Se o termo ficou vazio após a limpeza, PULA
+                    continue
+                
                 # Preenche o dicionário de frequências do doc atual
                 frequencias_por_doc[doc_id_completo][termo] = frequencias_por_doc[doc_id_completo].get(termo, 0) + 1
                 
@@ -132,7 +177,7 @@ class Corpus:
             }
     
     def _ler_documentos(self, caminho_corpus):
-        documents = []
+        documentos = []
         
         for categoria in os.listdir(caminho_corpus):
             caminho_categoria = os.path.join(caminho_corpus, categoria)
@@ -145,11 +190,11 @@ class Corpus:
                             with open(caminho_arquivo, 'r', encoding='latin-1') as f:
                                 conteudo = f.read()
                             doc = Documento(categoria, doc_id_num, conteudo)
-                            documents.append(doc)
+                            documentos.append(doc)
                         except Exception as e:
                             print(f"Erro ao ler o arquivo {caminho_arquivo}: {e}")
         
-        return documents
+        return documentos
     
     def carregar_de_disco(self, caminho_arquivo):
         """
@@ -161,18 +206,54 @@ class Corpus:
                 linhas = f.readlines()
                 
                 indice_estatisticas = linhas.index("---ESTATISTICAS---\n")
+                print("Indice estatíticas no arquivo 'indice.dat': ", indice_estatisticas, flush=True)
                 indice_trie = linhas.index("---TRIE---\n")
+                print("Indice trie no arquivo 'indice.dat': ", indice_trie, flush=True)
                     
                 # Processa as estatísticas
                 for i in range(indice_estatisticas + 1, indice_trie):
                     linha = linhas[i].strip()
+                    print("Linha 1: ", linha, flush=True)
                     if not linha: continue
-                    termo, estatisticas_str = linha.split(':', 1)
-                    media_str, desvio_str = estatisticas_str.split(',')
-                    self.estatisticas_corpus[termo] = {
-                        "media": float(media_str),
-                        "desvio_padrao": float(desvio_str)
-                    }
+                    
+                    # --- CORREÇÃO: Remove o comentário antes de processar ---
+                    linha_sem_comentario = linha.split('#', 1)[0].strip()
+                    if not linha_sem_comentario: continue # Pula linhas que só tinham comentários
+                    # ----------------------------------------------------
+                            
+                    partes = re.split(r'(?<!\\):', linha_sem_comentario, maxsplit=1)
+                    
+                    if len(partes) == 2:
+                        termo_seguro, estatisticas_str = partes
+                        try:
+                            termo = _remover_escape(termo_seguro) 
+                            
+                            # Agora, temos o termo e as estatísticas separadas corretamente
+                            linha2 = estatisticas_str.split(',')
+                            print("Linha 2: ", linha2, flush=True)
+                            if len(linha2) == 2:
+                                media_str, desvio_str = linha2
+                                try:
+                                    media = float(media_str)
+                                    desvio = float(desvio_str)
+                                    self.estatisticas_corpus[termo] = {
+                                        "media": media,
+                                        "desvio_padrao": desvio
+                                    }
+                                except ValueError as e_float:
+                                    # ERRO CORRETO: Falha na conversão float
+                                    print(f"[ERRO CONVERSÃO] Termo '{termo}': Não foi possível converter '{media_str}' ou '{desvio_str}' para float. Linha: {linha}. Erro: {e_float}")
+                            else:
+                                print(f"[ERRO FORMATO STATS] Termo '{termo}': Falta vírgula ou formato incorreto. Linha: {linha}")
+                        except re.error as e_escape:
+                            # ERRO CORRETO: Falha no escape
+                            print(f"[ERRO ESCAPE] Falha ao processar termo escapado na linha {i+1}: '{linha}'. Erro: {e_escape}")
+                        except Exception as e_geral:
+                            # Outros erros inesperados
+                            print(f"[ERRO INESPERADO STATS] Linha {i+1}: '{linha}'. Erro: {e_geral}")
+                    else:
+                        # ERRO CORRETO: Falta o ':' principal
+                        print(f"[ERRO FORMATO LINHA] Linha {i+1}: Não foi possível separar termo e estatísticas (falta ':'?). Conteúdo: '{linha}'")
 
                 self.trie = TrieCompacta()
                 pilha_de_pais = [self.trie.raiz] # pilha com os nós
@@ -197,32 +278,50 @@ class Corpus:
                     # Adiciona o novo nó à pilha
                     pilha_de_pais.append(novo_no)
                 
-            print("[DEBUG] Índice carregado com sucesso.")
+            print("Dados carregados com sucesso.")
             return True
         except FileNotFoundError:
-            print("[DEBUG] Arquivo de índice não encontrado. Um novo será criado.")
+            print("Arquivo de 'indice.dat' não encontrado. Um novo será criado.")
             return False
         except Exception as e:
-            print(f"Erro ao carregar o índice: {e}")
+            print(f"Erro ao carregar dados de 'indice.dat': {e}")
             return False
         
     def salvar_em_disco(self, caminho_arquivo):
         """
         Salva o índice (trie e estatísticas) em um arquivo de texto
         """
-        print(f"[DEBUG] Salvando o índice em '{caminho_arquivo}'...")
+        print(f"Salvando dados em '{caminho_arquivo}'...")
         try:
             with open(caminho_arquivo, 'w', encoding='utf-8') as f:
-                f.write(SECAO_ESTATISTICAS)
+                f.write("---ESTATISTICAS---\n")
+                mapa_reverso_categoria = {c.value: c.name for c in Categoria}
+                
                 for termo, stats in self.estatisticas_corpus.items():
+                    termo_seguro = _aplicar_escape(termo)
                     media = stats['media']
                     desvio = stats['desvio_padrao']
-                    f.write(f"{termo}:{media},{desvio}\n")
+                    
+                    # --- DEBUG: Buscar documentos de origem ---
+                    lista_invertida = self.trie.busca_palavra(termo) # Busca na Trie
+                    
+                    # Formata a lista de documentos (cat_int, num_int) para string
+                    origens = []
+                    if lista_invertida:
+                        for doc_id in sorted(lista_invertida.keys()): # Ordena para consistência
+                            cat_nome = mapa_reverso_categoria.get(doc_id[0], str(doc_id[0]))
+                            num_str = f"{doc_id[1]:03d}"
+                            origens.append(f"{cat_nome}/{num_str}")
+                    
+                    comentario_origem = f"# Origem: [{', '.join(origens)}]" if origens else "# Origem: N/A"
+                    # ----------------------------------------
+                    
+                    f.write(f"{termo_seguro}:{media},{desvio} {comentario_origem}\n")
 
                 f.write("---TRIE---\n")
                 self._salvar_no_recursivo(f, self.trie.raiz, 0)
             
-            print("[DEBUG] Índice salvo com sucesso.")
+            print("Dados salvos com sucesso.")
         except IOError as e:
             print(f"Erro ao salvar o índice: {e}")
     
@@ -255,8 +354,10 @@ class Corpus:
         
         lista_invertida_str = self._formatar_lista_invertida(NoTrie.lista_invertida)
         
+        valor_seguro = _aplicar_escape(NoTrie.valor)
+        
         # faz com que o valor do nó seja escrito com aspas (ex: 'ad')
-        valor_str = repr(NoTrie.valor)
+        valor_str = repr(valor_seguro)
 
         # Escreve o nó NoTrie arquivo: indentação, valor e sua lista invertida
         arquivo.write(f"{indentacao}({valor_str},{lista_invertida_str})\n")
