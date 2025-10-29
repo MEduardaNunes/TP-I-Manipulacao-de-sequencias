@@ -6,11 +6,15 @@
         <exp_and>     ::= <exp_not> (AND <exp_not>)*      
         <exp_not>     ::= NOT <exp_not> | <subexp>   
         <subexp>      ::= "(" <exp> ")" | <palavra> 
-        <palavra>     ::= (<simbolo> | <digito>)*  
-        <simbolo>       ::= "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m" 
-                        | "n" | "o" | "p" | "q" | "r" | "s" | "t" | "u" | "v" | "w" | "x" | "y" | "z"
-                        | "-" | "'"
-        <digito>      ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" 
+        <palavra> ::= (<letra> | <digito> | <simbolo>)*  
+        <letra> ::= "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m"
+                  | "n" | "o" | "p" | "q" | "r" | "s" | "t" | "u" | "v" | "w" | "x" | "y" | "z"
+                  | "á" | "à" | "â" | "ã" | "ä" | "ç" | "é" | "è" | "ê" | "í" | "ì" | "ó" | "ò" 
+                  | "ô" | "õ" | "ö" | "ú" | "ù" | "ü" | "ñ"
+        <digito> ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" 
+        <simbolo> ::= "." | "&" | "%" | "$" | "," | "!" | "?" | "#" | "@" | ";" 
+                    | "[" | "]" | "{" | "}" | "_" | "+" | "=" | "*" | "/" | ":" 
+                    | "~" | "^" | "<" | ">" | "|" | "'" | "-" | "£" | "\\" 
 """
 import sys
 import os
@@ -207,15 +211,21 @@ class ArvoreParsing:
         Representação da regra de <sub_exp>. Processa recursivamente uma 
         sub-expressão. 
             <subexp> ::= "(" <exp> ")" | <palavra> 
-            <palavra> ::= (<simbolo> | <digito>)*  
-            <simbolo> ::= "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m" 
+            <palavra> ::= (<letra> | <digito> | <simbolo>)*  
+            <letra> ::= "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m"
                       | "n" | "o" | "p" | "q" | "r" | "s" | "t" | "u" | "v" | "w" | "x" | "y" | "z"
-                      | "-" | "'"
+                      | "á" | "à" | "â" | "ã" | "ä" | "ç" | "é" | "è" | "ê" | "í" | "ì" | "ó" | "ò" 
+                      | "ô" | "õ" | "ö" | "ú" | "ù" | "ü" | "ñ"
             <digito> ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" 
+            <simbolo> ::= "." | "&" | "%" | "$" | "," | "!" | "?" | "#" | "@" | ";" 
+                        | "[" | "]" | "{" | "}" | "_" | "+" | "=" | "*" | "/" | ":" 
+                        | "~" | "^" | "<" | ">" | "|" | "'" | "-" | "£" | "\\" 
         
         Retorna:
             O nó gerado pelo processamento recursivo.
         """
+
+        padrao = r"[a-záàãâäçéèêíìóòôõöúùüñ0-9'\-\.&%£\$,!?#@;\[\]\{\}_\+=\*/:~\^<>|\\]+$"
 
         if self.token_atual() == "(":
             self.consome_token("(")
@@ -235,7 +245,7 @@ class ArvoreParsing:
 
             return no_atual
         
-        elif re.match(r"[a-z0-9\-']+$", self.token_atual() or "") and self.token_atual() not in ("AND", "OR", "NOT", "(", ")"):
+        elif re.match(padrao, self.token_atual() or "") and self.token_atual() not in ("AND", "OR", "NOT", "(", ")"):
             palavra = self.consome_token()
             return NoParsing(palavra)
         
