@@ -75,7 +75,7 @@ class ArvoreParsing:
             A lista de tokens gerada a partir da query.
         """ 
         query_normalizada = normaliza_query(self.query)
-        query_normalizada = self.query.replace('(', ' ( ').replace(')', ' ) ')
+        query_normalizada = query_normalizada.replace('(', ' ( ').replace(')', ' ) ')
         return query_normalizada.split()
 
     def token_atual(self):
@@ -393,6 +393,7 @@ def realiza_consulta(query, trie_palavras : TrieCompacta, todos_documentos : set
         if arvore_eh_valida(arvore):
             documentos = processa_arvore_parsing(arvore, trie_palavras, todos_documentos)
             return documentos, arvore
+
         else:
             print("ERRO: Árvore de parsing inválida.")
             return set(), None
