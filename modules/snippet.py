@@ -108,7 +108,10 @@ def _obter_indice_termo(conteudo_documento, termo_em_foco, indice_caractere_inic
             indice_alternativo = conteudo_documento.lower().find(termo_em_foco.lower())
             if indice_alternativo != -1:
                 return indice_alternativo
-    return -1
+            else:
+                print(f"[Aviso Snippet] Termo '{termo_em_foco}' não encontrado no conteúdo.")
+                return -1  # Termo não encontrado
+    return indice_caractere_inicial
         
 def _gerar_snippet_formatado(doc_id, termo_em_foco, indice_caractere_inicial, caminho_corpus, mapa_categorias, termos_validos):
     """
