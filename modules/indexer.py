@@ -5,6 +5,9 @@ import os
 import math
 import re
 
+SECAO_ESTATISTICAS = "---ESTATISTICAS---\n"
+SECAO_TRIE = "---TRIE---\n"
+
 def parse_linha_trie(linha):
     """
     Parse de uma linha do arquivo de índice da trie
@@ -152,17 +155,14 @@ class Corpus:
         """
         Carrega o índice (trie e estatísticas) de um arquivo de texto
         """
-        print(f"[DEBUG] Carregando o índice de '{caminho_arquivo}'...")
+        print(f"Carregando dados de '{caminho_arquivo}'...")
         try:
             with open(caminho_arquivo, 'r', encoding='utf-8') as f:
                 linhas = f.readlines()
                 
-                try:
-                    indice_estatisticas = linhas.index("--ESTATISTICAS--\n")
-                    indice_trie = linhas.index("--TRIE--\n")
-                except ValueError:
-                    raise ValueError("Arquivo de índice corrompido: marcadores de seção não encontrados.")
-
+                indice_estatisticas = linhas.index("---ESTATISTICAS---\n")
+                indice_trie = linhas.index("---TRIE---\n")
+                    
                 # Processa as estatísticas
                 for i in range(indice_estatisticas + 1, indice_trie):
                     linha = linhas[i].strip()
@@ -213,7 +213,7 @@ class Corpus:
         print(f"[DEBUG] Salvando o índice em '{caminho_arquivo}'...")
         try:
             with open(caminho_arquivo, 'w', encoding='utf-8') as f:
-                f.write("---ESTATISTICAS---\n")
+                f.write(SECAO_ESTATISTICAS)
                 for termo, stats in self.estatisticas_corpus.items():
                     media = stats['media']
                     desvio = stats['desvio_padrao']
