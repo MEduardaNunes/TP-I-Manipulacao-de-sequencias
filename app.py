@@ -255,4 +255,4 @@ if __name__ == '__main__':
         if hasattr(corpus_index, 'trie'): 
             print("\nDEBUG: Imprimindo amostra da Trie")
             corpus_index.trie.imprimir_arvore(mapa_categorias=mapa_reverso_categoria, limite=5)
-    app.run(debug=True)
+    app.run()
