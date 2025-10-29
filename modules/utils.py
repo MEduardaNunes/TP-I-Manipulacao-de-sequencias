@@ -2,7 +2,7 @@ import re
 
 def _get_caracteres_validos_palavra():
     """ Define o conjunto de caracteres aceitos como válidos para formar palavras."""
-    return {"'", "-", ".", "&", "%", "$",","}
+    return {"'", "-", ".", "&", "%", "$",",","!","?","#","@",";"}
 
 def processar_texto(texto):
     """
@@ -170,6 +170,3 @@ class ListaNaoLigada:
     def __iter__(self):
         for i in range(self.tamanho):
             yield self._array_interno[i]
-
-
-

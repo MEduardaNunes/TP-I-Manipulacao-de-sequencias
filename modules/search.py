@@ -72,7 +72,11 @@ class ArvoreParsing:
         """ 
         query_normalizada = normaliza_query(self.query)
         query_normalizada = self.query.replace('(', ' ( ').replace(')', ' ) ')
-        return query_normalizada.split()
+        
+        # Separa palavras e pontuação
+        tokens = re.findall(r"[a-zá-úA-ZÁ-Ú0-9\-\'\%\&\$\#\,\.\?\!]+|[.,!?]", query_normalizada)
+        
+        return tokens
 
     def token_atual(self):
         """
@@ -235,7 +239,7 @@ class ArvoreParsing:
 
             return no_atual
         
-        elif re.match(r"[a-zá-úA-ZÁ-Ú0-9\-'\%\&\$\#\,\£]+$", self.token_atual() or "") and self.token_atual() not in ("AND", "OR", "NOT", "(", ")"):
+        elif re.match(r"[a-zá-úA-ZÁ-Ú0-9\-\'\%\&\$\#\,\.\?\!]+$", self.token_atual() or "") and self.token_atual() not in ("AND", "OR", "NOT", "(", ")"):
             palavra = self.consome_token()
             print(f"Token gerado: {self.token_atual()}", flush=True)
             return NoParsing(palavra)
