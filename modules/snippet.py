@@ -18,11 +18,11 @@ def _ler_conteudo_documento(doc_id, caminho_corpus, mapa_categorias):
             return f.read()
     except (FileNotFoundError, IOError):
         info_erro = caminho_arquivo if caminho_arquivo else str(doc_id)
-        print(f"[Erro Snippet] Arquivo não encontrado: {info_erro}")
+        print(f"[Erro snippet] Arquivo não encontrado: {info_erro}")
         return None
     except Exception as e:
         info_erro = caminho_arquivo if caminho_arquivo else str(doc_id)
-        print(f"[Erro Snippet] Erro inesperado ao ler {info_erro}: {e}")
+        print(f"[Erro snippet] Erro inesperado ao ler {info_erro}: {e}")
         return None
         
 def _calcular_limites_snippet(tamanho_conteudo, indice_caractere_inicial, len_termo):

@@ -170,3 +170,44 @@ class ListaNaoLigada:
     def __iter__(self):
         for i in range(self.tamanho):
             yield self._array_interno[i]
+             
+def _merge(esquerda, direita, chave):
+    """
+    Função mergesort: mescla duas listas já ordenadas (de forma decrescente) em uma única lista ordenada.
+    """
+    lista_combinada = []
+    indice_esq, indice_dir = 0, 0
+
+    # Compara os elementos das duas listas e adiciona o de maior chave primeiro
+    while indice_esq < len(esquerda) and indice_dir < len(direita):
+        if  chave(esquerda[indice_esq]) >= chave(direita[indice_dir]):
+            lista_combinada.append(esquerda[indice_esq])
+            indice_esq += 1
+        else:
+            lista_combinada.append(direita[indice_dir])
+            indice_dir += 1
+
+    # Se houver, adiciona os elementos restantes de uma das listas
+    lista_combinada.extend(esquerda[indice_esq:])
+    lista_combinada.extend(direita[indice_dir:])
+    
+    return lista_combinada
+
+def mergesort(lista, chave):
+    """
+    Ordena uma lista em ordem decrescente de relevância usando o algoritmo mergesort. 
+    """
+    tamanho = len(lista)
+    if tamanho <= 1: # Lista já está ordenada (ou vazia)
+        return lista 
+
+    # Divide a lista ao meio
+    meio = tamanho // 2
+    metade_esquerda = lista[:meio]
+    metade_direita = lista[meio:]
+
+    esquerda = mergesort(lista[:meio], chave)
+    direita = mergesort(lista[meio:], chave)
+
+    # Combina as metades ordenadas
+    return _merge(esquerda, direita, chave)
