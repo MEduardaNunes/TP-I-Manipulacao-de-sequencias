@@ -26,7 +26,7 @@ def _ler_conteudo_documento_documento(doc_id, caminho_corpus, mapa_categorias):
         numero_str = f"{numero_int:03d}"
         nome_arquivo = f"{numero_str}.txt"
         caminho_arquivo = os.path.join(caminho_corpus, categoria_nome, nome_arquivo)
-        with open(caminho_arquivo, 'r', encoding='utf-8') as f:
+        with open(caminho_arquivo, 'r', encoding='latin-1') as f:
             return f.read()
     except (FileNotFoundError, IOError):
         info_erro = caminho_arquivo if caminho_arquivo else str(doc_id)

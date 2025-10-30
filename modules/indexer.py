@@ -16,13 +16,13 @@ def ler_documentos(caminho_corpus):
                         doc_id_num = nome_arquivo[:-4]
                         caminho_arquivo = os.path.join(caminho_categoria, nome_arquivo)
                         try:
-                            with open(caminho_arquivo, 'r', encoding='utf-8') as f:
+                            with open(caminho_arquivo, 'r', encoding='latin-1') as f:
                                 conteudo = f.read()
                             doc = Documento(categoria, doc_id_num, conteudo)
                             documentos.append(doc)
                         except Exception as e:
                             print(f"Erro ao ler o arquivo {caminho_arquivo}: {e}")
-        
+        print(f"[INFO] {len(documentos)} documentos lidos do disco.")
         return documentos
 
 class Corpus:
@@ -54,6 +54,9 @@ class Corpus:
             termos_com_posicao = processar_texto(doc.conteudo)
             
             for termo, indice_char in termos_com_posicao:
+                # Imprime as palavras antes e depois da remoção de pontuação
+                print(f"[DEBUG PROCESSAMENTO] Palavra original: '{termo}'")
+                
                 # Pula pontuações repetidas (ex: "!!", "...")
                 if re.fullmatch(r"([.,!?;:])\1+", termo):
                     continue 
@@ -64,6 +67,7 @@ class Corpus:
                 if not termo: # Pula o termo se ele ficou vazio (ex: era só um ".")
                     continue
                 
+                print(f"[DEBUG PROCESSAMENTO] Palavra processada: '{termo}'")
                 # Preenche o dicionário de frequências do doc atual
                 frequencias_por_doc[doc_id_completo][termo] = frequencias_por_doc[doc_id_completo].get(termo, 0) + 1
                 
@@ -147,6 +151,12 @@ class Corpus:
             
     def _aplicar_escape(self, valor):
         """Escapa os delimitadores usados no formato do arquivo."""
+        if valor is None:
+            return ""
+        
+        print(f"[DEBUG ESCAPE] Palavra original: '{valor}'")
+        
+        valor = str(valor)
         valor = valor.replace('\\', '\\\\')
         valor = valor.replace(':', '\\:')
         valor = valor.replace(',', '\\,')
@@ -154,17 +164,21 @@ class Corpus:
         valor = valor.replace(')', '\\)')
             
         valor = valor.replace("'", "\\'") 
+        print(f"[DEBUG ESCAPE] Palavra escapada: '{valor}'")
             
         return valor
 
     def _remover_escape(self, valor_escapado):
         """Reverte o escalonamento dos delimitadores."""
+        print(f"[DEBUG REMOVER ESCAPE] Valor escapado original: '{valor_escapado}'")
         valor = valor_escapado.replace('\\:', ':')
         valor = valor.replace('\\,', ',')
         valor = valor.replace('\\(', '(')
         valor = valor.replace('\\)', ')')
         valor = valor.replace("\\'", "'")      
         valor = valor.replace('\\\\', '\\')
+        
+        print(f"[DEBUG REMOVER ESCAPE] Valor removido dos escapes: '{valor}'")
             
         return valor
             
@@ -181,23 +195,20 @@ class Corpus:
         linha = linha.strip()
         
         # Regex para capturar o valor (str) entre as primeiras aspas simples. Ex: "('valor capturado', ...)"
-        valor_encontrado = re.search(r"^\('((?:\\.|[^'])*)',", linha)
+        match = re.match(r"^\('((?:\\.|[^'])*?)',({.*})\)$", linha)
         
-        if not valor_encontrado:
-            # Lida com o caso da raiz, que é salvo como '(,{})'
-            if linha == "(,{})":
+        if not match:
+            if linha == "('',{})" or linha == "(,'{}')": 
                 return "", {}
-            # Fallback para casos onde o 'repr()' não colocou aspas (ex: valor é None)
-            fallback_match = re.search(r"^\(([^,]*),", linha)
-            if fallback_match:
-                valor_repr = fallback_match.group(1)
-            else:
-                raise ValueError(f"Formato de linha inválido, não foi possível extrair o valor: {linha}")
-        else:
-            # Captura o grupo 1, que contém o valor entre as aspas (ex: 'a\\:b' ou '\\'s')
-            valor_repr = valor_encontrado.group(1)
+            raise ValueError(f"Formato de linha inválido, não correspondeu ao padrão: {linha}")
+        
+        valor_escapado = match.group(1)   # Ex: "it\'s"
+        lista_str = match.group(2)    # Ex: "{(1, 23):{...}}"
+        
+        print(f"[DEBUG TRIE] Valor escapado: '{valor_escapado}'")
             
-        valor = self._remover_escape(valor_repr)
+        valor = self._remover_escape(valor_escapado)
+        print(f"[DEBUG TRIE] Valor após remoção do escape: '{valor}'")
         
         lista_invertida_dict = {}
         
@@ -205,8 +216,8 @@ class Corpus:
         padrao_ocorrencia = re.compile(r"\((\d+), (\d+)\): \{'frequencia': (\d+), 'primeira_posicao': (\d+)\}")
         
         # Encontra todas as correspondências na string
-        for match in padrao_ocorrencia.finditer(linha):
-            cat_str, num_str, freq_str, pos_str = match.groups()
+        for match_dict in padrao_ocorrencia.finditer(lista_str):
+            cat_str, num_str, freq_str, pos_str = match_dict.groups()
             
             # Converte as strings capturadas para inteiros
             chave = (int(cat_str), int(num_str))
@@ -265,22 +276,27 @@ class Corpus:
             
             # Calcula a profundidade do nó na árvore pela indentação (a cada 2 espaços = 1 nível de profundidade)
             profundidade_atual = (len(linha) - len(linha.lstrip(' '))) // 2
-            valor, lista_invertida_dict = self.parse_linha_trie(linha)
+            try:
+                valor, lista_invertida_dict = self.parse_linha_trie(linha)
 
-            novo_no = NoTrie(valor)
-            novo_no.lista_invertida = lista_invertida_dict
+                novo_no = NoTrie(valor)
+                novo_no.lista_invertida = lista_invertida_dict
 
-            # Se a profundidade atual é menor, precisamos "subir" na árvore removendo nós da pilha até acharmos o pai certo
-            while len(pilha_de_pais) > profundidade_atual:
-                pilha_de_pais.pop()
-                    
-            # O pai é o último nó que sobrou na pilha
-            pai_no = pilha_de_pais[-1]
-            pai_no.insere_filho(novo_no)
-                    
-            # Adiciona o nó atual à pilha, pois ele é o pai dos próximos nós
-            pilha_de_pais.append(novo_no)
-                    
+                while len(pilha_de_pais) > profundidade_atual:
+                    pilha_de_pais.pop()
+                        
+                pai_no = pilha_de_pais[-1]
+                pai_no.insere_filho(novo_no)
+                        
+                pilha_de_pais.append(novo_no)
+            
+            except ValueError as e_parse:
+                # Se o parse_linha_trie falhar, este print nos dirá qual linha
+                print(f"[ERRO PARSE TRIE] Linha {i+1} mal formatada, pulando nó. Erro: {e_parse}", flush=True)
+                print(f"   -> Conteúdo da linha: {linha.strip()}", flush=True)
+            except Exception as e_geral:
+                print(f"[ERRO FATAL CARREGAR TRIE] Linha {i+1}: {e_geral}")
+                print(f"   -> Conteúdo da linha: {linha.strip()}")        
     def carregar_de_disco(self, caminho_arquivo):
         """
         Carrega o índice (trie e estatísticas) de um arquivo de texto
@@ -368,8 +384,11 @@ class Corpus:
         valor_seguro = self._aplicar_escape(no.valor)
         
         # faz com que o valor do nó seja escrito com aspas (ex: 'ad')
-        valor_str = repr(valor_seguro)
-
+        valor_str = f"'{valor_seguro}'"
+        
+        if no.valor and ("'" in no.valor or "\\" in no.valor):
+             print(f"[DEBUG SALVAR] Termo Original: {no.valor} | Escapado: {valor_seguro} | String Final: {valor_str}")
+        
         # Escreve o nó NoTrie arquivo: indentação, valor e sua lista invertida
         arquivo.write(f"{indentacao}({valor_str},{lista_invertida_str})\n")
         
