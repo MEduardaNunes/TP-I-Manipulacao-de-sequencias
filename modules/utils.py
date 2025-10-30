@@ -4,12 +4,12 @@ def obter_caracteres_validos():
     """ Define o conjunto de caracteres aceitos como válidos para formar palavras."""
     return {"'", "-", ".", "&", "%", "$", ",", "!", "?", "#", "@", ";", "[", "]", "{", "}", "_", "+", "=", "*", "/", ":", "~", "^", "<", ">", "|", "\\"}
 
-def _get_caracteres_validos_palavra():
-    """ Define o set de caracteres INTERNOS permitidos."""
-    # Ajustado: '.' pode ser interno (e.g.) mas também externo. '-' e "'" são tipicamente internos.
+def _obter_caracteres_internos_palavra():
+    """ Define o set de caracteres internos permitidos."""
+    # '.' pode ser interno (e.g.) mas também externo. '-' e "'" são normalmente internos.
     return frozenset(["'", "-"]) 
 
-def _get_simbolos_standalone_indexaveis():
+def _obter_simbolos_indexaveis():
     """ Define símbolos que devem ser indexados como tokens separados."""
     return frozenset([".", "&", "%", "$"]) # Adicione outros se necessário (ex: ',', ';')
     
@@ -28,25 +28,14 @@ def processar_texto(texto):
     
     tokens_com_posicao = [] # Lista para armazenar as tuplas (termo, indice_char)
     
-    # --- PADRÃO REGEX ---
-    # 1. Palavras: Sequências de letras/números que PODEM conter '-' ou "'" INTERNAMENTE.
-    #    Ex: state-of-the-art, can't, word123
-    #    Regex: r'\b[a-z0-9]+(?:[-'][a-z0-9]+)*\b'
-    # 2. Números: Sequências de dígitos, possivelmente com '.' ou ',' (ajuste se necessário)
-    #    Ex: 123, 1.500, 50% (o % será capturado separadamente se não for incluído aqui)
-    #    Regex: r'\b\d+(?:[.,]\d+)*\b' 
-    # 3. Símbolos Standalone: Captura os símbolos definidos (&, %, $, .)
-    #    Regex: r'[.&%$]' (Adapte para incluir outros como ',')
+    # - Palavras: Sequências de letras/números que podem conter '-' ou "'" internamente
+    # - Números: Sequências de dígitos, possivelmente com '.' ou ','
+    # - Símbolos standalone: Captura os símbolos definidos em _obter_simbolos_indexaveis
 
-    # PADRÃO COMBINADO (A ordem importa: palavras primeiro para evitar que '-' seja pego sozinho)
-    # Adicionamos os símbolos standalone escapados
+    # Constrói o padrão de símbolos
+    simbolos_padrao = '[' + re.escape("".join(_obter_simbolos_indexaveis()())) + ']'
     
-    simbolos_pattern = '[' + re.escape("".join(_get_simbolos_standalone_indexaveis())) + ']'
-    
-    # Padrão final: Palavras com hífens/apóstrofos | Números | Símbolos standalone
-    # Usamos re.finditer para obter os objetos match e seus índices
-    # O padrão para palavras é simplificado para [a-z0-9'-]+ para capturar hífens/apóstrofos
-    padrao = re.compile(r"([a-z0-9'" + re.escape("-") + r"]+)|(" + simbolos_pattern + r")", re.IGNORECASE)
+    padrao = re.compile(r"([a-z0-9'" + re.escape("-") + r"]+)|(" + simbolos_padrao + r")", re.IGNORECASE)
     
     for match in padrao.finditer(texto):
         token = match.group(0) # Pega o texto completo do match
@@ -80,23 +69,6 @@ def normaliza_query(query):
             query_normalizada += palavra.lower() + " "
 
     return query_normalizada.strip()
-
-class No:
-    def __init__(self, valor=None):
-        self.valor = valor
-        self.proximo = None
-        
-class IteradorListaLigada:
-    def __init__(self, no_inicial):
-        self.no_atual = no_inicial
-
-    def __next__(self):
-        if self.no_atual is None:
-            raise StopIteration
-        
-        dado_a_retornar = self.no_atual.valor
-        self.no_atual = self.no_atual.proximo
-        return dado_a_retornar
              
 def _merge(esquerda, direita, chave):
     """
