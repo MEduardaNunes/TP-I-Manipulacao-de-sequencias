@@ -478,15 +478,10 @@ class GerenciadorDeBusca:
             traceback.print_exc()
             return [{'id': 'ERRO Interno', 'score': 'N/A', 'snippet': f'Falha inesperada na RI: {e}'}]
 
-    def _preparar_resultados_para_ordenacao(self, arvore_raiz: NoParsing, doc_ids: set, lista_todos_os_termos: list):
-        """ Calcula a relevância e define o termo/posição de destaque."""
-        
-        # Busca lista invertida por termo
-        lista_tokens_validos = lista_todos_os_termos
-        
-        if not lista_tokens_validos:
-            return [ResultadoItem(doc_id=d, relevancia=0.0, query_termo="", caractere_inicial=0) for d in doc_ids]
-
+    def _calcular_scores_por_documento(self, doc_ids: set, lista_tokens_validos: list):
+        """ 
+        Monta um dicionário com z-score, pos e freq para cada documento relevante.
+        """
         dados_por_doc_id = {}
         
         for termo in lista_tokens_validos:
@@ -496,7 +491,13 @@ class GerenciadorDeBusca:
             media = stats['media']
             desvio = stats['desvio_padrao']
             
+            # Se o termo não existe na Trie, pula para o próximo termo
+            if not lista_invertida_do_termo:
+                continue
+            
+            # Itera apenas nos documentos que passaram na busca booleana
             for doc_id in doc_ids:
+                # Verifica se o doc atual (da busca booleana) contém o termo atual
                 if doc_id in lista_invertida_do_termo:
                     
                     dados = lista_invertida_do_termo[doc_id]
@@ -515,18 +516,24 @@ class GerenciadorDeBusca:
                         'termo': termo,
                         'freq': freq
                     })
-        
+        return dados_por_doc_id
+
+    def _agregar_resultados_finais(self, doc_ids: set, dados_por_doc_id: dict, termo_default: str):
+        """ 
+        Calcula a relevância final (média dos z-scores) e encontra o melhor termo para o snippet.
+        """
         resultados = []
         
         for doc_id in doc_ids:
             doc_data = dados_por_doc_id.get(doc_id)
             
+            # O doc passou no filtro booleano, mas não contém nenhum dos termos da query para calcular o score.
             if not doc_data or not doc_data['termo_scores']:
                 relevancia_final = 0.0
-                melhor_termo = lista_tokens_validos[0]
+                melhor_termo = termo_default
                 melhor_posicao = 0
             else:
-                # Calcula a média dos z-ccores
+                # Calcula a média dos z-scores como relevância final
                 scores = [t['z_score'] for t in doc_data['termo_scores']]
                 relevancia_final = sum(scores) / len(scores)
                 
@@ -541,5 +548,23 @@ class GerenciadorDeBusca:
                 query_termo=melhor_termo, 
                 caractere_inicial=melhor_posicao
             ))
+        return resultados
+        
+    def _preparar_resultados_para_ordenacao(self, arvore_raiz: NoParsing, doc_ids: set, lista_todos_os_termos: list):
+        """ Calcula a relevância e define o termo/posição de destaque."""
+        
+        lista_tokens_validos = lista_todos_os_termos
+        
+        # A consulta não tem termos ou a árvore é nula
+        if not lista_tokens_validos:
+            return [ResultadoItem(doc_id=d, relevancia=0.0, query_termo="", caractere_inicial=0) for d in doc_ids]
+
+        # Coleta os z-scores, posições e freqs de cada termo em cada doc
+        dados_por_doc_id = self._calcular_scores_por_documento(doc_ids, lista_tokens_validos)
+        
+        # Agrega os scores e encontra o melhor termo para o snippet 
+        # Passa o primeiro termo como 'default' para o caso de um doc não ter termos
+        termo_default = lista_tokens_validos[0]
+        resultados = self._agregar_resultados_finais(doc_ids, dados_por_doc_id, termo_default)
             
         return resultados 
