@@ -154,7 +154,7 @@ class Corpus:
         if valor is None:
             return ""
         
-        print(f"[DEBUG ESCAPE] Palavra original: '{valor}'")
+        #print(f"[DEBUG ESCAPE] Palavra original: '{valor}'")
         
         valor = str(valor)
         valor = valor.replace('\\', '\\\\')
@@ -164,13 +164,13 @@ class Corpus:
         valor = valor.replace(')', '\\)')
             
         valor = valor.replace("'", "\\'") 
-        print(f"[DEBUG ESCAPE] Palavra escapada: '{valor}'")
+        #print(f"[DEBUG ESCAPE] Palavra escapada: '{valor}'")
             
         return valor
 
     def _remover_escape(self, valor_escapado):
         """Reverte o escalonamento dos delimitadores."""
-        print(f"[DEBUG REMOVER ESCAPE] Valor escapado original: '{valor_escapado}'")
+        #print(f"[DEBUG REMOVER ESCAPE] Valor escapado original: '{valor_escapado}'")
         valor = valor_escapado.replace('\\:', ':')
         valor = valor.replace('\\,', ',')
         valor = valor.replace('\\(', '(')
@@ -178,7 +178,7 @@ class Corpus:
         valor = valor.replace("\\'", "'")      
         valor = valor.replace('\\\\', '\\')
         
-        print(f"[DEBUG REMOVER ESCAPE] Valor removido dos escapes: '{valor}'")
+        #print(f"[DEBUG REMOVER ESCAPE] Valor removido dos escapes: '{valor}'")
             
         return valor
             
@@ -204,16 +204,13 @@ class Corpus:
         
         valor_escapado = match.group(1)   # Ex: "it\'s"
         lista_str = match.group(2)    # Ex: "{(1, 23):{...}}"
-        
-        print(f"[DEBUG TRIE] Valor escapado: '{valor_escapado}'")
             
         valor = self._remover_escape(valor_escapado)
-        print(f"[DEBUG TRIE] Valor após remoção do escape: '{valor}'")
         
         lista_invertida_dict = {}
         
         # Encontra todas as ocorrências de "(cat, num): {'freq': f, 'pos': p}"
-        padrao_ocorrencia = re.compile(r"\((\d+), (\d+)\): \{'frequencia': (\d+), 'primeira_posicao': (\d+)\}")
+        padrao_ocorrencia = re.compile(r"\((\d+),\s*(\d+)\):\s*\{'frequencia':\s*(\d+),\s*'primeira_posicao':\s*(\d+)\}")
         
         # Encontra todas as correspondências na string
         for match_dict in padrao_ocorrencia.finditer(lista_str):
@@ -226,7 +223,7 @@ class Corpus:
                 "primeira_posicao": int(pos_str)
             }
             lista_invertida_dict[chave] = dados
-
+            
         return valor, lista_invertida_dict
     
     def _carregar_estatisticas(self, linhas, indice_estatisticas, indice_trie):
@@ -257,11 +254,11 @@ class Corpus:
                                 except ValueError as e_float:
                                     print(f"[ERRO CONVERSÃO] Termo '{termo}': Não foi possível converter '{media_str}' ou '{desvio_str}' para float. Linha: {linha}. Erro: {e_float}")
                             else:
-                                print(f"[ERRO FORMATO STATS] Termo '{termo}': Falta vírgula ou formato incorreto. Linha: {linha}")
+                                print(f"[ERRO FORMATO ESTATISTICAS] Termo '{termo}': Falta vírgula ou formato incorreto. Linha: {linha}")
                         except re.error as e_escape:
                             print(f"[ERRO ESCAPE] Falha ao processar termo escapado na linha {i+1}: '{linha}'. Erro: {e_escape}")
                         except Exception as e_geral:
-                            print(f"[ERRO INESPERADO STATS] Linha {i+1}: '{linha}'. Erro: {e_geral}")
+                            print(f"[ERRO INESPERADO ESTATISTICAS] Linha {i+1}: '{linha}'. Erro: {e_geral}")
                     else:
                         print(f"[ERRO FORMATO LINHA] Linha {i+1}: Não foi possível separar termo e estatísticas (falta ':'?). Conteúdo: '{linha}'")
 
@@ -386,10 +383,6 @@ class Corpus:
         # faz com que o valor do nó seja escrito com aspas (ex: 'ad')
         valor_str = f"'{valor_seguro}'"
         
-        if no.valor and ("'" in no.valor or "\\" in no.valor):
-             print(f"[DEBUG SALVAR] Termo Original: {no.valor} | Escapado: {valor_seguro} | String Final: {valor_str}")
-        
-        # Escreve o nó NoTrie arquivo: indentação, valor e sua lista invertida
         arquivo.write(f"{indentacao}({valor_str},{lista_invertida_str})\n")
         
         for filho in no.filhos:
