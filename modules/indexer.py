@@ -1,57 +1,29 @@
 from TrieCompacta import TrieCompacta, NoTrie
-from .utils import processar_texto, _aplicar_escape, _remover_escape
+from .utils import processar_texto
 from .models import Documento, Categoria
 import os
 import math
 import re
 
-def parse_linha_trie(linha):
-    """
-    Parse de uma linha do arquivo de índice da trie
-
-    Parâmetros:
-        linha (str): a string da linha a ser analisada. Ex: "('ad',{(1, 23):...})"
-
-    Retorno:
-        Uma tupla (valor, lista_invertida_dict) com os dados extraídos.
-    """
-    linha = linha.strip()
-    
-    valor_encontrado = re.search(r"^\('((?:\\.|[^'])*)',", linha)
-    
-    if not valor_encontrado:
-        # Lida com o caso da raiz, que é '(,{})'
-        if linha == "(,{})":
-            return "", {}
-        fallback_match = re.search(r"^\(([^,]*),", linha)
-        if fallback_match:
-             valor_repr = fallback_match.group(1)
-        else:
-            raise ValueError(f"Formato de linha inválido, não foi possível extrair o valor: {linha}")
-    else:
-        # Captura o grupo 1, que contém o valor entre as aspas (ex: 'a\\:b' ou '\\'s')
-        valor_repr = valor_encontrado.group(1)
+def ler_documentos(caminho_corpus):
+        documentos = []
         
-    valor = _remover_escape(valor_repr)
-    
-    lista_invertida_dict = {}
-    
-    # Encontra todas as ocorrências de "(cat, num): {'freq': f, 'pos': p}"
-    padrao_ocorrencia = re.compile(r"\((\d+), (\d+)\): \{'frequencia': (\d+), 'primeira_posicao': (\d+)\}")
-    
-    # Encontra todas as correspondências na string
-    for match in padrao_ocorrencia.finditer(linha):
-        cat_str, num_str, freq_str, pos_str = match.groups()
+        for categoria in os.listdir(caminho_corpus):
+            caminho_categoria = os.path.join(caminho_corpus, categoria)
+            if os.path.isdir(caminho_categoria):
+                for nome_arquivo in os.listdir(caminho_categoria):
+                    if nome_arquivo.endswith('.txt'):
+                        doc_id_num = nome_arquivo[:-4]
+                        caminho_arquivo = os.path.join(caminho_categoria, nome_arquivo)
+                        try:
+                            with open(caminho_arquivo, 'r', encoding='latin-1') as f:
+                                conteudo = f.read()
+                            doc = Documento(categoria, doc_id_num, conteudo)
+                            documentos.append(doc)
+                        except Exception as e:
+                            print(f"Erro ao ler o arquivo {caminho_arquivo}: {e}")
         
-        # Converte as strings capturadas para inteiros
-        chave = (int(cat_str), int(num_str))
-        dados = {
-            "frequencia": int(freq_str),
-            "primeira_posicao": int(pos_str)
-        }
-        lista_invertida_dict[chave] = dados
-
-    return valor, lista_invertida_dict
+        return documentos
 
 class Corpus:
     def __init__(self):
@@ -70,7 +42,7 @@ class Corpus:
         """
         self.todos_documentos.clear()
         
-        documentos = self._ler_documentos(caminho_corpus)
+        documentos = ler_documentos(caminho_corpus)
         total_docs = len(documentos)
         
         if total_docs == 0:
@@ -105,14 +77,15 @@ class Corpus:
                 
                 doc_id = (categoria_int, numero_int)
                 self.todos_documentos.add(doc_id)
-                
-                self.todos_documentos.add((doc.categoria, doc_id))
                 # Insere o termo, o id do documento e a primeira posição de ocorrência do termo na trie Compacta
                 self.trie.insere_palavra(termo, (categoria_int, numero_int), indice_char)
         
         todos_os_termos = set(termo for freqs in frequencias_por_doc.values() for termo in freqs)        
+        self._calcular_estatisticas(total_docs, todos_os_termos, lista_de_frequencias_por_termo, frequencias_por_doc)
         
-        # Calcula a média e o desvio padrão de cada termo
+    def _calcular_estatisticas(self, total_docs, todos_os_termos, lista_de_frequencias_por_termo, frequencias_por_doc):
+        """Calcula estatísticas de frequência e desvio padrão para cada termo"""
+        
         for termo in todos_os_termos:
             lista_de_frequencias_por_termo[termo] = []
             for doc_id in frequencias_por_doc:
@@ -143,26 +116,77 @@ class Corpus:
                 "media": media,
                 "desvio_padrao": desvio_padrao
             }
-    
-    def _ler_documentos(self, caminho_corpus):
-        documentos = []
+            
+    def _aplicar_escape(self, valor):
+        """Escapa os delimitadores usados no formato do arquivo."""
+        valor = valor.replace('\\', '\\\\')
+        valor = valor.replace(':', '\\:')
+        valor = valor.replace(',', '\\,')
+        valor = valor.replace('(', '\\(')
+        valor = valor.replace(')', '\\)')
+            
+        valor = valor.replace("'", "\\'") 
+            
+        return valor
+
+    def _remover_escape(self, valor_escapado):
+        """Reverte o escalonamento dos delimitadores."""
+        valor = valor_escapado.replace('\\:', ':')
+        valor = valor.replace('\\,', ',')
+        valor = valor.replace('\\(', '(')
+        valor = valor.replace('\\)', ')')
+        valor = valor.replace("\\'", "'")      
+        valor = valor.replace('\\\\', '\\')
+            
+        return valor
+            
+    def parse_linha_trie(self, linha):
+        """
+        Parse de uma linha do arquivo de índice da trie
+
+        Parâmetros:
+            linha (str): a string da linha a ser analisada. Ex: "('ad',{(1, 23):...})"
+
+        Retorno:
+            Uma tupla (valor, lista_invertida_dict) com os dados extraídos.
+        """
+        linha = linha.strip()
         
-        for categoria in os.listdir(caminho_corpus):
-            caminho_categoria = os.path.join(caminho_corpus, categoria)
-            if os.path.isdir(caminho_categoria):
-                for nome_arquivo in os.listdir(caminho_categoria):
-                    if nome_arquivo.endswith('.txt'):
-                        doc_id_num = nome_arquivo[:-4]
-                        caminho_arquivo = os.path.join(caminho_categoria, nome_arquivo)
-                        try:
-                            with open(caminho_arquivo, 'r', encoding='latin-1') as f:
-                                conteudo = f.read()
-                            doc = Documento(categoria, doc_id_num, conteudo)
-                            documentos.append(doc)
-                        except Exception as e:
-                            print(f"Erro ao ler o arquivo {caminho_arquivo}: {e}")
+        valor_encontrado = re.search(r"^\('((?:\\.|[^'])*)',", linha)
         
-        return documentos
+        if not valor_encontrado:
+            # Lida com o caso da raiz, que é '(,{})'
+            if linha == "(,{})":
+                return "", {}
+            fallback_match = re.search(r"^\(([^,]*),", linha)
+            if fallback_match:
+                valor_repr = fallback_match.group(1)
+            else:
+                raise ValueError(f"Formato de linha inválido, não foi possível extrair o valor: {linha}")
+        else:
+            # Captura o grupo 1, que contém o valor entre as aspas (ex: 'a\\:b' ou '\\'s')
+            valor_repr = valor_encontrado.group(1)
+            
+        valor = self._remover_escape(valor_repr)
+        
+        lista_invertida_dict = {}
+        
+        # Encontra todas as ocorrências de "(cat, num): {'freq': f, 'pos': p}"
+        padrao_ocorrencia = re.compile(r"\((\d+), (\d+)\): \{'frequencia': (\d+), 'primeira_posicao': (\d+)\}")
+        
+        # Encontra todas as correspondências na string
+        for match in padrao_ocorrencia.finditer(linha):
+            cat_str, num_str, freq_str, pos_str = match.groups()
+            
+            # Converte as strings capturadas para inteiros
+            chave = (int(cat_str), int(num_str))
+            dados = {
+                "frequencia": int(freq_str),
+                "primeira_posicao": int(pos_str)
+            }
+            lista_invertida_dict[chave] = dados
+
+        return valor, lista_invertida_dict
     
     def carregar_de_disco(self, caminho_arquivo):
         """
@@ -174,33 +198,23 @@ class Corpus:
                 linhas = f.readlines()
                 
                 indice_estatisticas = linhas.index("---ESTATISTICAS---\n")
-                print("Indice estatíticas no arquivo 'indice.dat': ", indice_estatisticas, flush=True)
                 indice_trie = linhas.index("---TRIE---\n")
-                print("Indice trie no arquivo 'indice.dat': ", indice_trie, flush=True)
                     
                 # Processa as estatísticas
                 for i in range(indice_estatisticas + 1, indice_trie):
                     linha = linhas[i].strip()
-                    print("Linha 1: ", linha, flush=True)
                     if not linha: continue
-                    
-                    # --- CORREÇÃO: Remove o comentário antes de processar ---
-                    linha_sem_comentario = linha.split('#', 1)[0].strip()
-                    if not linha_sem_comentario: continue # Pula linhas que só tinham comentários
-                    # ----------------------------------------------------
                             
-                    partes = re.split(r'(?<!\\):', linha_sem_comentario, maxsplit=1)
+                    partes = re.split(r'(?<!\\):', linha, maxsplit=1)
                     
                     if len(partes) == 2:
                         termo_seguro, estatisticas_str = partes
                         try:
-                            termo = _remover_escape(termo_seguro) 
+                            termo = self._remover_escape(termo_seguro) 
+                            valores_estatisticas = estatisticas_str.split(',')
                             
-                            # Agora, temos o termo e as estatísticas separadas corretamente
-                            linha2 = estatisticas_str.split(',')
-                            print("Linha 2: ", linha2, flush=True)
-                            if len(linha2) == 2:
-                                media_str, desvio_str = linha2
+                            if len(valores_estatisticas) == 2:
+                                media_str, desvio_str = valores_estatisticas
                                 try:
                                     media = float(media_str)
                                     desvio = float(desvio_str)
@@ -209,18 +223,14 @@ class Corpus:
                                         "desvio_padrao": desvio
                                     }
                                 except ValueError as e_float:
-                                    # ERRO CORRETO: Falha na conversão float
                                     print(f"[ERRO CONVERSÃO] Termo '{termo}': Não foi possível converter '{media_str}' ou '{desvio_str}' para float. Linha: {linha}. Erro: {e_float}")
                             else:
                                 print(f"[ERRO FORMATO STATS] Termo '{termo}': Falta vírgula ou formato incorreto. Linha: {linha}")
                         except re.error as e_escape:
-                            # ERRO CORRETO: Falha no escape
                             print(f"[ERRO ESCAPE] Falha ao processar termo escapado na linha {i+1}: '{linha}'. Erro: {e_escape}")
                         except Exception as e_geral:
-                            # Outros erros inesperados
                             print(f"[ERRO INESPERADO STATS] Linha {i+1}: '{linha}'. Erro: {e_geral}")
                     else:
-                        # ERRO CORRETO: Falta o ':' principal
                         print(f"[ERRO FORMATO LINHA] Linha {i+1}: Não foi possível separar termo e estatísticas (falta ':'?). Conteúdo: '{linha}'")
 
                 self.trie = TrieCompacta()
@@ -231,7 +241,7 @@ class Corpus:
                     if not linha.strip(): continue
 
                     profundidade_atual = (len(linha) - len(linha.lstrip(' '))) // 2
-                    valor, lista_invertida_dict = parse_linha_trie(linha)
+                    valor, lista_invertida_dict = self.parse_linha_trie(linha)
 
                     novo_no = NoTrie(valor)
                     novo_no.lista_invertida = lista_invertida_dict
@@ -254,6 +264,17 @@ class Corpus:
         except Exception as e:
             print(f"Erro ao carregar dados de 'indice.dat': {e}")
             return False
+    
+    def _formatar_estatisticas(self):
+        """Formata as estatísticas para salvar em disco."""
+        linhas_formatadas = []
+        
+        for termo, estatisticas in self.estatisticas_corpus.items():
+            termo_seguro = self._aplicar_escape(termo)
+            media = estatisticas['media']
+            desvio = estatisticas['desvio_padrao']
+            linhas_formatadas.append(f"{termo_seguro}:{media},{desvio}\n")
+        return linhas_formatadas
         
     def salvar_em_disco(self, caminho_arquivo):
         """
@@ -263,28 +284,10 @@ class Corpus:
         try:
             with open(caminho_arquivo, 'w', encoding='utf-8') as f:
                 f.write("---ESTATISTICAS---\n")
-                mapa_reverso_categoria = {c.value: c.name for c in Categoria}
                 
-                for termo, stats in self.estatisticas_corpus.items():
-                    termo_seguro = _aplicar_escape(termo)
-                    media = stats['media']
-                    desvio = stats['desvio_padrao']
+                linhas_estatisticas = self._formatar_estatisticas()
                     
-                    # --- DEBUG: Buscar documentos de origem ---
-                    lista_invertida = self.trie.busca_palavra(termo) # Busca na Trie
-                    
-                    # Formata a lista de documentos (cat_int, num_int) para string
-                    origens = []
-                    if lista_invertida:
-                        for doc_id in sorted(lista_invertida.keys()): # Ordena para consistência
-                            cat_nome = mapa_reverso_categoria.get(doc_id[0], str(doc_id[0]))
-                            num_str = f"{doc_id[1]:03d}"
-                            origens.append(f"{cat_nome}/{num_str}")
-                    
-                    comentario_origem = f"# Origem: [{', '.join(origens)}]" if origens else "# Origem: N/A"
-                    # ----------------------------------------
-                    
-                    f.write(f"{termo_seguro}:{media},{desvio} {comentario_origem}\n")
+                f.writelines(linhas_estatisticas)
 
                 f.write("---TRIE---\n")
                 self._salvar_no_recursivo(f, self.trie.raiz, 0)
@@ -313,16 +316,16 @@ class Corpus:
         conteudo_interno = ", ".join(partes)
         return f"{{{conteudo_interno}}}"
     
-    def _salvar_no_recursivo(self, arquivo, NoTrie, profundidade):
+    def _salvar_no_recursivo(self, arquivo, no, profundidade):
         """
         Método auxiliar recursivo para salvar os nós da trie
         """
         # Indentação para representar a estrutura da árvore
         indentacao = "  " * profundidade
         
-        lista_invertida_str = self._formatar_lista_invertida(NoTrie.lista_invertida)
+        lista_invertida_str = self._formatar_lista_invertida(no.lista_invertida)
         
-        valor_seguro = _aplicar_escape(NoTrie.valor)
+        valor_seguro = self._aplicar_escape(no.valor)
         
         # faz com que o valor do nó seja escrito com aspas (ex: 'ad')
         valor_str = repr(valor_seguro)
@@ -330,7 +333,7 @@ class Corpus:
         # Escreve o nó NoTrie arquivo: indentação, valor e sua lista invertida
         arquivo.write(f"{indentacao}({valor_str},{lista_invertida_str})\n")
         
-        for filho in NoTrie.filhos:
+        for filho in no.filhos:
             self._salvar_no_recursivo(arquivo, filho, profundidade + 1)         
     
     # PARA DEBUG
