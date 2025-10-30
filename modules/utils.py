@@ -7,11 +7,11 @@ def obter_caracteres_validos():
 def _obter_caracteres_internos_palavra():
     """ Define o set de caracteres internos permitidos."""
     # '.' pode ser interno (e.g.) mas também externo. '-' e "'" são normalmente internos.
-    return frozenset(["'", "-"]) 
+    return frozenset(["'", "-", "."]) 
 
 def _obter_simbolos_indexaveis():
     """ Define símbolos que devem ser indexados como tokens separados."""
-    return frozenset([".", "&", "%", "$"]) # Adicione outros se necessário (ex: ',', ';')
+    return frozenset(["&", "%", "$", "!", "?", ",", ";"])
     
 def processar_texto(texto):
     """
@@ -28,14 +28,18 @@ def processar_texto(texto):
     
     tokens_com_posicao = [] # Lista para armazenar as tuplas (termo, indice_char)
     
-    # - Palavras: Sequências de letras/números que podem conter '-' ou "'" internamente
-    # - Números: Sequências de dígitos, possivelmente com '.' ou ','
-    # - Símbolos standalone: Captura os símbolos definidos em _obter_simbolos_indexaveis
-
-    # Constrói o padrão de símbolos
-    simbolos_padrao = '[' + re.escape("".join(_obter_simbolos_indexaveis()())) + ']'
+    # Constrói o padrão para símbolos (ex: [.&%$])
+    simbolos_padrao = "([%s])" % re.escape("".join(_obter_simbolos_indexaveis()))
     
-    padrao = re.compile(r"([a-z0-9'" + re.escape("-") + r"]+)|(" + simbolos_padrao + r")", re.IGNORECASE)
+    # Constrói o padrão para caracteres internos (ex: '-)
+    caracteres_palavra = re.escape("".join(_obter_caracteres_internos_palavra()))
+    
+    padrao_palavras = r"([a-z0-9" + caracteres_palavra + r"]*[a-z0-9][a-z0-9" + caracteres_palavra + r"]*)"
+    
+    padrao = re.compile(
+        padrao_palavras + r"|" + simbolos_padrao, 
+        re.IGNORECASE
+    )
     
     for match in padrao.finditer(texto):
         token = match.group(0) # Pega o texto completo do match
@@ -123,8 +127,8 @@ def mergesort(lista, chave):
     metade_esquerda = lista[:meio]
     metade_direita = lista[meio:]
 
-    esquerda = mergesort(lista[:meio], chave)
-    direita = mergesort(lista[meio:], chave)
+    esquerda = mergesort(metade_esquerda, chave)
+    direita = mergesort(metade_direita, chave)
 
     # Combina as metades ordenadas
     return _merge(esquerda, direita, chave)
