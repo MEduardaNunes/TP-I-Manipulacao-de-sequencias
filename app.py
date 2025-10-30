@@ -177,9 +177,8 @@ def exibir_documento(categoria, id_documento):
     caminho_absoluto_corpus = os.path.abspath(caminho_corpus)
     caminho_absoluto_arquivo = os.path.abspath(caminho_arquivo)
     
-    if not os.path.exists(caminho_arquivo):
-        print(f"ERRO: Arquivo não encontrado em {caminho_arquivo}") # DEBUG
-        return f"Documento não encontrado: {categoria}/{id_documento}", 404
+    if not os.path.exists(caminho_absoluto_arquivo):
+        print(f"ERRO: Arquivo não encontrado em {caminho_absoluto_arquivo}") 
     
     with open(caminho_arquivo, 'r', encoding='latin-1') as f:
         conteudo = f.read()
