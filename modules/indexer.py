@@ -32,7 +32,48 @@ class Corpus:
             self.estatisticas_corpus = {}  # Formato: {"termo": {"media": x, "desvio_padrao": y}}  
             self.todos_documentos = set()
             
+    def _processar_documentos(self, documentos):
+        """
+        Processa uma lista de documentos, populando a Trie e o set 'todos_documentos'.
+        Retorna os dicionários de frequência necessários para as estatísticas.
+        """
+        frequencias_por_doc = {} # Formato: {'business/001': {'trade': 5, 'market': 3}, ...}
         
+        for doc in documentos:
+            doc_id_completo = f"{doc.categoria}/{doc.doc_id}" # Cria um id único para cada doc (ex: 'business/001')
+            frequencias_por_doc[doc_id_completo] = {}
+
+            # Normalização do texto
+            termos_com_posicao = processar_texto(doc.conteudo)
+            
+            for termo, indice_char in termos_com_posicao:
+                if re.fullmatch(r"([.,!?;:])\1+", termo):
+                    continue 
+                else:
+                    termo = re.sub(r"^[,.!?;:]+|[,.!?;:]+$", "", termo)
+                    
+                if not termo:
+                    continue
+                
+                # Preenche o dicionário de frequências do doc atual
+                frequencias_por_doc[doc_id_completo][termo] = frequencias_por_doc[doc_id_completo].get(termo, 0) + 1
+                
+                # Converte os identificadores do doc para inteiros
+                categoria_int = Categoria[doc.categoria].value
+                numero_int = int(doc.doc_id)
+                
+                doc_id_tupla = (categoria_int, numero_int)
+                self.todos_documentos.add(doc_id_tupla)
+                
+                # Insere o termo, o id do documento e a primeira posição de ocorrência do termo na trie compacta
+                self.trie.insere_palavra(termo, doc_id_tupla, indice_char)
+        
+        # Cria o set de todos os termos únicos encontrados
+        todos_os_termos = set(termo for freqs in frequencias_por_doc.values() for termo in freqs)
+        
+        return frequencias_por_doc, todos_os_termos
+            
+    
     def construir_indice(self, caminho_corpus):
         """
         Método responsável por fazer o processo de indexação (lê documentos, calcula estatísticas e preenche a trie)
@@ -50,41 +91,21 @@ class Corpus:
             return
         
         # Dicionário temporário para armazenar as frequências de cada termo por documento
-        frequencias_por_doc = {} # Formato: {'business/001': {'trade': 5, 'market': 3}, ...}
-        lista_de_frequencias_por_termo = {} # Formato: {'trade': [5, 0, 2, ...], 'market': [3, 1, 0, ...]}
+        # Formato frequencias_por_doc: {'business/001': {'trade': 5, 'market': 3}, ...}
+        # Formato lista_de_frequencias_por_termo: {'trade': [5, 0, 2, ...], 'market': [3, 1, 0, ...]}
         
-        for doc in documentos:
-            doc_id_completo = f"{doc.categoria}/{doc.doc_id}" # Cria um id único para cada doc (ex: 'business/001')
-            frequencias_por_doc[doc_id_completo] = {}
+        frequencias_por_doc, todos_os_termos = self._processar_documentos(documentos)
+        
+        lista_de_frequencias_por_termo = self._construir_lista_frequencias(todos_os_termos, frequencias_por_doc)
+        
+        self._calcular_estatisticas(total_docs, lista_de_frequencias_por_termo)
 
-            # Normalização do texto
-            termos_com_posicao = processar_texto(doc.conteudo)
-            for termo, indice_char in termos_com_posicao:
-                if re.fullmatch(r"([.,!?;:])\1+", termo):
-                    continue # Pula pontuações repetidas
-                else:
-                    termo = re.sub(r"^[,.!?;:]+|[,.!?;:]+$", "", termo)
-                    
-                if not termo: # Se o termo ficou vazio após a limpeza, PULA
-                    continue
-                
-                # Preenche o dicionário de frequências do doc atual
-                frequencias_por_doc[doc_id_completo][termo] = frequencias_por_doc[doc_id_completo].get(termo, 0) + 1
-                
-                # Converte os identificadores do doc para inteiros
-                categoria_int = Categoria[doc.categoria].value
-                numero_int = int(doc.doc_id)
-                
-                doc_id = (categoria_int, numero_int)
-                self.todos_documentos.add(doc_id)
-                # Insere o termo, o id do documento e a primeira posição de ocorrência do termo na trie Compacta
-                self.trie.insere_palavra(termo, (categoria_int, numero_int), indice_char)
-        
-        todos_os_termos = set(termo for freqs in frequencias_por_doc.values() for termo in freqs)        
-        self._calcular_estatisticas(total_docs, todos_os_termos, lista_de_frequencias_por_termo, frequencias_por_doc)
-        
-    def _calcular_estatisticas(self, total_docs, todos_os_termos, lista_de_frequencias_por_termo, frequencias_por_doc):
-        """Calcula estatísticas de frequência e desvio padrão para cada termo"""
+    def _construir_lista_frequencias(self, todos_os_termos, frequencias_por_doc):
+        """
+        Converte o dicionário 'frequencias_por_doc' em um dicionário 
+        de 'termo -> [lista de frequências]', necessário para o cálculo estatístico.
+        """
+        lista_de_frequencias_por_termo = {}
         
         for termo in todos_os_termos:
             lista_de_frequencias_por_termo[termo] = []
@@ -92,6 +113,11 @@ class Corpus:
                 freq = frequencias_por_doc[doc_id].get(termo, 0)
                 lista_de_frequencias_por_termo[termo].append(freq)
                 
+        return lista_de_frequencias_por_termo
+    
+    def _calcular_estatisticas(self, total_docs, lista_de_frequencias_por_termo):
+        """Calcula estatísticas de frequência e desvio padrão para cada termo"""
+        
         for termo, freqs in lista_de_frequencias_por_termo.items():
             soma_freq = 0
             
