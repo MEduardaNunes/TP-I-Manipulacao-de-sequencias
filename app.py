@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, session, redirect, url_for
 from modules.indexer import Corpus 
 from modules.resultados import GerenciadorResultados
 from modules.models import Categoria
-from modules.search import realiza_consulta, GerenciadorDeBusca
+from modules.search import GerenciadorDeBusca
 import os
 import traceback
 
@@ -52,10 +52,9 @@ def inicializar_indice():
                 caminho_corpus=caminho_corpus,
                 estatisticas_corpus=corpus_index.estatisticas_corpus
             )
-            print("SUCESSO: Gerenciador de Busca inicializado e pronto para a busca.")
             
         except Exception as e:
-            print(f"[ERRO FATAL] Falha ao criar GerenciadorDeBusca: {e}")
+            print(f"[ERRO] Falha ao criar GerenciadorDeBusca: {e}")
             traceback.print_exc()
 @app.route('/', methods=['GET'])
 def home(): 

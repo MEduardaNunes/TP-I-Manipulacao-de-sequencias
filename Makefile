@@ -13,14 +13,9 @@ run:
 	@echo "Iniciando o servidor Flask... (Pressione Ctrl+C para parar)"
 	./$(VENV_DIR)/bin/python app.py
 
-debug_tree:
-	@echo "Indexando o corpus e salvando a árvore em 'arvore_completa.txt'..."
-	./$(VENV_DIR)/bin/python app.py > arvore_completa.txt 2>&1
-	@echo "Arquivo 'arvore_completa.txt' criado com sucesso!"
-
 clean:
-	@echo "--> Removendo arquivos de cache..."
 	rm -rf saved_index
 	find . -type f -name "*.pyc" -delete
 	find . -type d -name "__pycache__" -exec rm -rf {} +
+	rm -f data/indice.dat
 	@echo "--> Limpeza concluída."

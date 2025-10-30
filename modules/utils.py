@@ -7,11 +7,11 @@ def obter_caracteres_validos():
 def _obter_caracteres_internos_palavra():
     """ Define o set de caracteres internos permitidos."""
     # '.' pode ser interno (e.g.) mas também externo. '-' e "'" são normalmente internos.
-    return frozenset(["'", "-", "."]) 
+    return frozenset(["'", "-", ".", ",", ";"]) 
 
 def _obter_simbolos_indexaveis():
     """ Define símbolos que devem ser indexados como tokens separados."""
-    return frozenset(["&", "%", "$", "!", "?", ",", ";"])
+    return frozenset(["&", "%", "$", "!", "?"])
     
 def processar_texto(texto):
     """

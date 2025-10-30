@@ -16,7 +16,7 @@ def ler_documentos(caminho_corpus):
                         doc_id_num = nome_arquivo[:-4]
                         caminho_arquivo = os.path.join(caminho_categoria, nome_arquivo)
                         try:
-                            with open(caminho_arquivo, 'r', encoding='latin-1') as f:
+                            with open(caminho_arquivo, 'r', encoding='utf-8') as f:
                                 conteudo = f.read()
                             doc = Documento(categoria, doc_id_num, conteudo)
                             documentos.append(doc)

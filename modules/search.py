@@ -273,28 +273,6 @@ class ArvoreParsing:
 
         return self.raiz
     
-    def imprimir_debug(self):
-        """
-        Imprime o estado atual da consulta e os tokens gerados para fins de depuração.
-        """
-        print("\n--- DEBUG DA ÁRVORE DE PARSING ---")
-        print(f"Consulta Original: {self.query}")
-        
-        # Verifica se os tokens foram gerados corretamente
-        if self.tokens:
-            print(f"Número de Tokens: {len(self.tokens)}")
-            print(f"Tokens Gerados: {self.tokens}")
-        else:
-            print("AVISO: Nenhum token foi gerado (query vazia após processamento).")
-
-        # Verifica se a raiz da árvore foi construída
-        if self.raiz:
-            # O __repr__ de NoParsing deve imprimir a estrutura de forma legível
-            print(f"Estrutura da Árvore (Raiz): {self.raiz}") 
-        else:
-            print("ESTADO: A raiz da árvore ainda não foi construída ou o parsing falhou.")
-        print("-----------------------------------")
-    
 class GerenciadorDeBusca:
     """ Coordena a consulta de forma completa (parsing, busca booleana, cálculo de relevância e formatação)."""
     
@@ -425,7 +403,6 @@ class GerenciadorDeBusca:
         try:
             parser = ArvoreParsing(query)
             arvore = parser.gera_parsing_tokens()
-            parser.imprimir_debug()
 
             if self._arvore_eh_valida(arvore):
                 documentos = self._processa_arvore_parsing(arvore)
