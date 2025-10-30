@@ -41,9 +41,7 @@ class GerenciadorResultados:
         
         """
         if self._resultados_ordenados is None:
-            print(f"[DEBUG] Ordenando {len(self._resultados)} resultados...")
             self._resultados_ordenados = mergesort(self._resultados, self.obter_relevancia)
-            print("[DEBUG] Ordenação concluída.")
             
     def gerar_snippet(self, item):
         """Tenta gerar o snippet e retorna uma mensagem em caso de falha"""
@@ -85,7 +83,6 @@ class GerenciadorResultados:
         resultados_finais = []
         
         for item in resultados_pagina:
-            print(f"[DEBUG RESULTADOS] Processando item ID: {item.doc_id}", flush=True)
             snippet = "[Snippet não gerado]"
             
             snippet = self.gerar_snippet(item)

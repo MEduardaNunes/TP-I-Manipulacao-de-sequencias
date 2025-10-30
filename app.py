@@ -12,36 +12,43 @@ app.secret_key = "senha_super_secreta"
 corpus_index = None
 gerenciador_de_busca = None
 caminho_corpus = None
-mapa_categorias_reverso = None
 
 def inicializar_indice():
+    """
+    Carrega o índice do disco ou o constrói se não existir.
+    Inicializa as variáveis globais que a aplicação usará.
+    """
     global corpus_index, caminho_corpus, mapa_categorias_reverso, gerenciador_de_busca
     caminho_indice_salvo = "data/indice.dat" 
     caminho_relativo = './bbc'
+    
+    # Define o caminho absoluto para o corpus
     caminho_corpus = os.path.abspath(os.path.join(os.path.dirname(__file__), caminho_relativo))
 
     corpus_index = Corpus()
     indice_carregado_ou_construido = False
     
+    # Tenta carregar o índice do disco
     if os.path.exists(caminho_indice_salvo) and corpus_index.carregar_de_disco(caminho_indice_salvo):
-        print("SUCESSO: O índice foi carregado do arquivo")
+        print("O índice foi carregado do arquivo")
         indice_carregado_ou_construido = True
     else:
+        # Se falhar constrói o índice
         if not os.path.exists(caminho_corpus):
-            print(f"Diretório do corpus não encontrado em '{caminho_corpus}'")
+            print(f"ERRO: Diretório do corpus não encontrado em '{caminho_corpus}'")
             return
 
         corpus_index.construir_indice(caminho_corpus)
         
         if corpus_index.estatisticas_corpus:
-            print("\nSUCESSO: O índice foi criado e carregado na memória") # DEBUG
-            # corpus_index.imprimir_estatisticas(limite=10)
+            print("\nO índice foi criado e carregado na memória") 
             os.makedirs(os.path.dirname(caminho_indice_salvo), exist_ok=True)
             corpus_index.salvar_em_disco(caminho_indice_salvo)
             indice_carregado_ou_construido = True
         else:
-            print("\nFALHA: O índice não pôde ser criado. Verifique os logs") # DEBUG
+            print("\nERRO: O índice não pôde ser criado. Verifique os logs") 
 
+    # Se o índice estiver pronto inicializa o Gerenciador de Busca
     if indice_carregado_ou_construido:
         try:
             todos_documentos = corpus_index.todos_documentos 
@@ -51,29 +58,27 @@ def inicializar_indice():
                 todos_documentos=todos_documentos,
                 caminho_corpus=caminho_corpus,
                 estatisticas_corpus=corpus_index.estatisticas_corpus
-            )
-            
+            )      
         except Exception as e:
             print(f"[ERRO] Falha ao criar GerenciadorDeBusca: {e}")
             traceback.print_exc()
-@app.route('/', methods=['GET'])
-def home(): 
-    """Página inicial com o formulário de busca."""
+@app.before_request
+def inicializar_sessao():
+    """Executa antes de cada rota para garantir que o histórico exista."""
     session.permanent = False
     if 'historico' not in session:
         session['historico'] = []
-
+                    
+@app.route('/', methods=['GET'])
+def home(): 
+    """Página inicial com o formulário de busca."""
     return render_template('index.html')   
 
 @app.route('/search', methods=['GET', 'POST'])
 def search_results():
     """Rota para processar a busca e exibir os resultados."""
     global gerenciador_de_busca
-    session.permanent = False
     
-    if 'historico' not in session:
-        session['historico'] = []
-
     resultados_pagina = []
     termo = None
     pagina_atual = 1
@@ -84,6 +89,7 @@ def search_results():
         termo = request.form.get('mensagem')
         
         if termo:
+            # Adiciona ao histórico (limitado a 10)
             if termo not in session['historico']:
                 session['historico'].append(termo)
                 session['historico'] = session['historico'][-10:]
@@ -100,16 +106,15 @@ def search_results():
                 pagina_atual = 1
         except ValueError:
             pagina_atual = 1
-    
+            
+    # Se tivermos um termo e o gerenciador estiver pronto, executa a busca
     if termo and gerenciador_de_busca:
         try:
-            print(f"[APP_DEBUG] Chamando executar_busca para termo='{termo}', pagina={pagina_atual}", flush=True)
             retorno_busca = gerenciador_de_busca.executar_busca(
                 termo, 
                 num_pagina=pagina_atual, 
                 tamanho_pagina=tamanho_pagina_fixo
             )
-            print(f"[APP_DEBUG] executar_busca retornou: {retorno_busca}")
             resultados_pagina = retorno_busca
             
             if resultados_pagina is None: 
@@ -119,6 +124,7 @@ def search_results():
                 print(f"[INFO Busca] Página {pagina_atual} vazia para '{termo}', redirecionando para página 1.")
                 return redirect(url_for('search_results', termo=termo, page=1))
             else:
+                # Verifica se há mais resultados
                 tem_proxima_pagina = len(resultados_pagina) == tamanho_pagina_fixo
         except Exception as e:
             print(f"Erro durante o processamento da busca para '{termo}': {e}")
@@ -136,7 +142,8 @@ def search_results():
 
 @app.route('/historico', methods=['GET', 'POST'])
 def historico():
-    session.permanent = False
+    """Exibe o histórico de buscas e permite nova busca a partir dele."""
+    
     if 'historico' not in session:
         session['historico'] = []
 
@@ -148,17 +155,30 @@ def historico():
 
 @app.route('/documento/<categoria>/<id_documento>', methods=['GET'])
 def exibir_documento(categoria, id_documento):
-    """Exibe o conteúdo inteiro de um documento com base na categoria e ID dele."""
+    """Exibe o conteúdo de um documento específico."""
     global caminho_corpus
+
+    # Verifica se a categoria é válida
+    categorias_validas = [c.name for c in Categoria]
+    if categoria not in categorias_validas:
+        print(f"ERRO: Categoria inválida '{categoria}'")
+        abort(404, "Documento não encontrado.")
+
+    # Verifica se o id é completamente numérico
+    if not id_documento.isdigit():
+        print(f"ERRO: id de documento inválido '{id_documento}'")
+        abort(404, "Documento não encontrado.")
     
     id_formatado = f"{int(id_documento):03d}" 
     nome_arquivo = f"{id_formatado}.txt"
     
     caminho_arquivo = os.path.join(caminho_corpus, categoria, nome_arquivo)
-    print(f"DEBUG: Tentando ler o arquivo: {caminho_arquivo}") # DEBUG
+    
+    caminho_absoluto_corpus = os.path.abspath(caminho_corpus)
+    caminho_absoluto_arquivo = os.path.abspath(caminho_arquivo)
     
     if not os.path.exists(caminho_arquivo):
-        print(f"DEBUG: Arquivo não encontrado em {caminho_arquivo}") # DEBUG
+        print(f"ERRO: Arquivo não encontrado em {caminho_arquivo}") # DEBUG
         return f"Documento não encontrado: {categoria}/{id_documento}", 404
     
     with open(caminho_arquivo, 'r', encoding='latin-1') as f:
@@ -173,10 +193,14 @@ def exibir_documento(categoria, id_documento):
 
 @app.route('/ajuda')
 def ajuda():
+    """Exibe a página de ajuda."""
     return render_template('ajuda.html')
 
 if __name__ == '__main__':
     inicializar_indice()
      
-    if corpus_index and corpus_index.estatisticas_corpus:     
-        app.run()
+    if gerenciador_de_busca:    
+        app.run(debug=False) 
+    else:
+        print("ERRO: Gerenciador de busca não foi inicializado.")
+        print("O servidor Flask não será iniciado.")
