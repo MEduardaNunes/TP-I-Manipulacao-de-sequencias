@@ -34,36 +34,38 @@ class Corpus:
             
     def _processar_documentos(self, documentos):
         """
-        Processa uma lista de documentos, populando a Trie e o set 'todos_documentos'.
+        Processa uma lista de documentos, preenchendo a Trie e o set 'todos_documentos'.
         Retorna os dicionários de frequência necessários para as estatísticas.
         """
+        # Dicionário temporário para calcular frequências
         frequencias_por_doc = {} # Formato: {'business/001': {'trade': 5, 'market': 3}, ...}
-        
+                
         for doc in documentos:
             doc_id_completo = f"{doc.categoria}/{doc.doc_id}" # Cria um id único para cada doc (ex: 'business/001')
             frequencias_por_doc[doc_id_completo] = {}
+            
+            # Converte os identificadores do doc para inteiros
+            categoria_int = Categoria[doc.categoria].value
+            numero_int = int(doc.doc_id) 
+            doc_id_tupla = (categoria_int, numero_int)
+            self.todos_documentos.add(doc_id_tupla)
 
             # Normalização do texto
             termos_com_posicao = processar_texto(doc.conteudo)
             
             for termo, indice_char in termos_com_posicao:
+                # Pula pontuações repetidas (ex: "!!", "...")
                 if re.fullmatch(r"([.,!?;:])\1+", termo):
                     continue 
                 else:
+                    # Remove pontuação do início ou fim do termo
                     termo = re.sub(r"^[,.!?;:]+|[,.!?;:]+$", "", termo)
                     
-                if not termo:
+                if not termo: # Pula o termo se ele ficou vazio (ex: era só um ".")
                     continue
                 
                 # Preenche o dicionário de frequências do doc atual
                 frequencias_por_doc[doc_id_completo][termo] = frequencias_por_doc[doc_id_completo].get(termo, 0) + 1
-                
-                # Converte os identificadores do doc para inteiros
-                categoria_int = Categoria[doc.categoria].value
-                numero_int = int(doc.doc_id)
-                
-                doc_id_tupla = (categoria_int, numero_int)
-                self.todos_documentos.add(doc_id_tupla)
                 
                 # Insere o termo, o id do documento e a primeira posição de ocorrência do termo na trie compacta
                 self.trie.insere_palavra(termo, doc_id_tupla, indice_char)
@@ -76,7 +78,7 @@ class Corpus:
     
     def construir_indice(self, caminho_corpus):
         """
-        Método responsável por fazer o processo de indexação (lê documentos, calcula estatísticas e preenche a trie)
+        Método responsável por fazer o processo de indexação.
         
         Parâmetros:
             caminho_corpus (str): O caminho para o diretório raiz do corpus de documentos
@@ -90,14 +92,16 @@ class Corpus:
             print("[CONSTRUIR_INDICE] A lista de documentos está vazia. A indexação não pode continuar.")
             return
         
-        # Dicionário temporário para armazenar as frequências de cada termo por documento
         # Formato frequencias_por_doc: {'business/001': {'trade': 5, 'market': 3}, ...}
         # Formato lista_de_frequencias_por_termo: {'trade': [5, 0, 2, ...], 'market': [3, 1, 0, ...]}
         
+        # Processa os documentos, preenche a Trie e calcula as frequências
         frequencias_por_doc, todos_os_termos = self._processar_documentos(documentos)
         
+        # Transforma os dados para uma lista de freqs por termo
         lista_de_frequencias_por_termo = self._construir_lista_frequencias(todos_os_termos, frequencias_por_doc)
         
+        # Calcula média e desvio padrão para cada termo
         self._calcular_estatisticas(total_docs, lista_de_frequencias_por_termo)
 
     def _construir_lista_frequencias(self, todos_os_termos, frequencias_por_doc):
@@ -109,6 +113,7 @@ class Corpus:
         
         for termo in todos_os_termos:
             lista_de_frequencias_por_termo[termo] = []
+            # Para cada documento, pega a frequência daquele termo
             for doc_id in frequencias_por_doc:
                 freq = frequencias_por_doc[doc_id].get(termo, 0)
                 lista_de_frequencias_por_termo[termo].append(freq)
@@ -116,14 +121,10 @@ class Corpus:
         return lista_de_frequencias_por_termo
     
     def _calcular_estatisticas(self, total_docs, lista_de_frequencias_por_termo):
-        """Calcula estatísticas de frequência e desvio padrão para cada termo"""
+        """Calcula estatísticas de frequência (média, desvio padrão) para cada termo"""
         
         for termo, freqs in lista_de_frequencias_por_termo.items():
-            soma_freq = 0
-            
-            for freq in freqs:
-                soma_freq += freq
-                
+            soma_freq = sum(freqs)
             media = soma_freq / total_docs
             
             if total_docs > 1:
@@ -136,6 +137,7 @@ class Corpus:
                 variancia = soma_das_diferencas_quadradas / (total_docs - 1)
                 desvio_padrao = math.sqrt(variancia)
             else:
+                # Evita divisão por zero se houver apenas 1 documento
                 desvio_padrao = 0
                 
             self.estatisticas_corpus[termo] = {
@@ -178,12 +180,14 @@ class Corpus:
         """
         linha = linha.strip()
         
+        # Regex para capturar o valor (str) entre as primeiras aspas simples. Ex: "('valor capturado', ...)"
         valor_encontrado = re.search(r"^\('((?:\\.|[^'])*)',", linha)
         
         if not valor_encontrado:
-            # Lida com o caso da raiz, que é '(,{})'
+            # Lida com o caso da raiz, que é salvo como '(,{})'
             if linha == "(,{})":
                 return "", {}
+            # Fallback para casos onde o 'repr()' não colocou aspas (ex: valor é None)
             fallback_match = re.search(r"^\(([^,]*),", linha)
             if fallback_match:
                 valor_repr = fallback_match.group(1)
@@ -214,23 +218,14 @@ class Corpus:
 
         return valor, lista_invertida_dict
     
-    def carregar_de_disco(self, caminho_arquivo):
-        """
-        Carrega o índice (trie e estatísticas) de um arquivo de texto
-        """
-        print(f"Carregando dados de '{caminho_arquivo}'...")
-        try:
-            with open(caminho_arquivo, 'r', encoding='utf-8') as f:
-                linhas = f.readlines()
-                
-                indice_estatisticas = linhas.index("---ESTATISTICAS---\n")
-                indice_trie = linhas.index("---TRIE---\n")
-                    
-                # Processa as estatísticas
-                for i in range(indice_estatisticas + 1, indice_trie):
+    def _carregar_estatisticas(self, linhas, indice_estatisticas, indice_trie):
+        """Processa as linhas de estatísticas e preenche self.estatisticas_corpus."""
+        
+        for i in range(indice_estatisticas + 1, indice_trie):
                     linha = linhas[i].strip()
                     if not linha: continue
-                            
+                    
+                    # Divide no primeiro ':' que não esteja escapado 
                     partes = re.split(r'(?<!\\):', linha, maxsplit=1)
                     
                     if len(partes) == 2:
@@ -259,28 +254,48 @@ class Corpus:
                     else:
                         print(f"[ERRO FORMATO LINHA] Linha {i+1}: Não foi possível separar termo e estatísticas (falta ':'?). Conteúdo: '{linha}'")
 
-                self.trie = TrieCompacta()
-                pilha_de_pais = [self.trie.raiz] # pilha com os nós
+    def _carregar_trie(self, linhas, indice_trie):
+        """Processa as linhas da trie e reconstrói self.trie."""
+        self.trie = TrieCompacta()
+        pilha_de_pais = [self.trie.raiz] # Pilha para reconstruir a árvore
                 
-                for i in range(indice_trie + 2, len(linhas)):
-                    linha = linhas[i]
-                    if not linha.strip(): continue
+        for i in range(indice_trie + 2, len(linhas)):
+            linha = linhas[i]
+            if not linha.strip(): continue
+            
+            # Calcula a profundidade do nó na árvore pela indentação (a cada 2 espaços = 1 nível de profundidade)
+            profundidade_atual = (len(linha) - len(linha.lstrip(' '))) // 2
+            valor, lista_invertida_dict = self.parse_linha_trie(linha)
 
-                    profundidade_atual = (len(linha) - len(linha.lstrip(' '))) // 2
-                    valor, lista_invertida_dict = self.parse_linha_trie(linha)
+            novo_no = NoTrie(valor)
+            novo_no.lista_invertida = lista_invertida_dict
 
-                    novo_no = NoTrie(valor)
-                    novo_no.lista_invertida = lista_invertida_dict
-
-                    while len(pilha_de_pais) > profundidade_atual:
-                        pilha_de_pais.pop()
+            # Se a profundidade atual é menor, precisamos "subir" na árvore removendo nós da pilha até acharmos o pai certo
+            while len(pilha_de_pais) > profundidade_atual:
+                pilha_de_pais.pop()
                     
-                    # O pai é o último nó que sobrou na pilha
-                    pai_no = pilha_de_pais[-1]
-                    pai_no.insere_filho(novo_no)
+            # O pai é o último nó que sobrou na pilha
+            pai_no = pilha_de_pais[-1]
+            pai_no.insere_filho(novo_no)
                     
-                    # Adiciona o novo nó à pilha
-                    pilha_de_pais.append(novo_no)
+            # Adiciona o nó atual à pilha, pois ele é o pai dos próximos nós
+            pilha_de_pais.append(novo_no)
+                    
+    def carregar_de_disco(self, caminho_arquivo):
+        """
+        Carrega o índice (trie e estatísticas) de um arquivo de texto
+        """
+        print(f"Carregando dados de '{caminho_arquivo}'...")
+        try:
+            with open(caminho_arquivo, 'r', encoding='utf-8') as f:
+                linhas = f.readlines()
+                
+                # Encontra os separadores de bloco
+                indice_estatisticas = linhas.index("---ESTATISTICAS---\n")
+                indice_trie = linhas.index("---TRIE---\n")
+                    
+                self._carregar_estatisticas(linhas, indice_estatisticas, indice_trie)
+                self._carregar_trie(linhas, indice_trie)
                 
             print("Dados carregados com sucesso.")
             return True
@@ -292,7 +307,7 @@ class Corpus:
             return False
     
     def _formatar_estatisticas(self):
-        """Formata as estatísticas para salvar em disco."""
+        """Converte o dicionário de estatísticas em uma lista de strings para salvar."""
         linhas_formatadas = []
         
         for termo, estatisticas in self.estatisticas_corpus.items():
@@ -344,9 +359,8 @@ class Corpus:
     
     def _salvar_no_recursivo(self, arquivo, no, profundidade):
         """
-        Método auxiliar recursivo para salvar os nós da trie
+        Método auxiliar recursivo para salvar os nós da trie usando indentação para representar a estrutura da árvore.
         """
-        # Indentação para representar a estrutura da árvore
         indentacao = "  " * profundidade
         
         lista_invertida_str = self._formatar_lista_invertida(no.lista_invertida)
@@ -362,34 +376,7 @@ class Corpus:
         for filho in no.filhos:
             self._salvar_no_recursivo(arquivo, filho, profundidade + 1)         
     
-    # PARA DEBUG
-    # def imprimir_estatisticas(self, limite=10):
-    #     """
-    #     Imprime as estatísticas do corpus de forma legível para debugging.
 
-    #     Parâmetros:
-    #         limite (int): O número máximo de termos a serem impressos.
-    #                       Útil para não poluir a tela com milhares de linhas.
-    #     """
-    #     print("\n--- Estatísticas do Corpus ---")
-    #     if not self.estatisticas_corpus:
-    #         print("(Nenhuma estatística calculada)")
-    #         return
-        
-    #     count = 0
-    #     for termo, stats in self.estatisticas_corpus.items():
-    #         if count >= limite:
-    #             print(f"\n... e mais {len(self.estatisticas_corpus) - limite} termos.")
-    #             break
-            
-    #         media = stats['media']
-    #         desvio = stats['desvio_padrao']
-            
-    #         print(f"- Termo: '{termo}'")
-    #         print(f"    Média de Frequência: {media:.4f}")
-    #         print(f"    Desvio Padrão: {desvio:.4f}")
-            
-    #         count += 1
                                 
                     
 
