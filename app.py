@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, session, redirect, url_for
+from flask import Flask, render_template, request, session, redirect, url_for, abort
 from modules.indexer import Corpus 
 from modules.resultados import GerenciadorResultados
 from modules.models import Categoria
