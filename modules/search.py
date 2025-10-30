@@ -294,144 +294,6 @@ class ArvoreParsing:
         else:
             print("ESTADO: A raiz da árvore ainda não foi construída ou o parsing falhou.")
         print("-----------------------------------")
-
-
-def processa_arvore_parsing(no : NoParsing, trie_palavras: TrieCompacta, todos_documentos : set):
-    """
-    Processa uma árvore de Parsing recursivamente, aplicando operações booleanas sobre os 
-    termos dos documentos armazenados em uma Trie Compacta.
-    
-    Parâmetros:
-        no (NoParsing): o nó que será processado.
-        trie_palavras (TrieCompacta): a trie que armazena todas palavras de todos os arquivos.
-        todos_documentos (set): todas tuplas (seção, número) dos arquivos.
-    
-    Retorna:
-        Um set com todos os arquivos que satisfazem a consulta.
-    """
-    if no is None:
-        return set()
-    
-    if no.operador == "AND":
-        return (processa_arvore_parsing(no.esquerda, trie_palavras, todos_documentos) 
-                & processa_arvore_parsing(no.direita, trie_palavras, todos_documentos))
-    
-    elif no.operador == "OR":
-        return (processa_arvore_parsing(no.esquerda, trie_palavras, todos_documentos)
-                | processa_arvore_parsing(no.direita, trie_palavras, todos_documentos))
-
-    elif no.operador == "NOT":
-        return todos_documentos - (processa_arvore_parsing(no.direita, trie_palavras, todos_documentos))
-    
-    else:
-        palavra = no.operador
-        lista_invertida_palavra = trie_palavras.busca_palavra(palavra)
-        return set(lista_invertida_palavra.keys()) if lista_invertida_palavra else set()
-
-
-def tem_no_invalido(no):
-    """
-    Verifica recursivamente se um no é inválido, ou seja, se algum
-    de seus filhos é None.
-    
-    Parâmetros:
-        no (NoParsing): o nó a ser verificado.
-
-    Retorna:
-        True se for inválido, False caso contrário.
-    """
-    if no is None:
-        return True
-    
-    if no.operador in ("AND", "OR"):
-        return tem_no_invalido(no.esquerda) or tem_no_invalido(no.direita)
-    
-    if no.operador == "NOT":
-        return tem_no_invalido(no.direita)
-    
-    return False
-
-
-def arvore_eh_valida(arvore):
-    """
-    Verifica se uma árvore é válida, isto é, sem raiz nula e sem
-    nós inválidos.
-    
-    Parâmetros:
-        arvore (NoParsing): a árvore a ser verificada.
-
-    Retorna:
-        True se for válida, ou False caso contrário.
-    """
-    if arvore is None:
-        return False
-    
-    else: 
-        return not tem_no_invalido(arvore)
-
-
-def realiza_consulta(query, trie_palavras : TrieCompacta, todos_documentos : set):
-    """
-    Realiza uma consulta de uma query em um conjunto de documentos, 
-    por meio de uma trie compacta que armazena todas palavras dos
-    documentos e de uma árvore de parsing que processa a query.
-    
-    Parâmetros:
-        query (str): a consulta a ser realizada.
-        trie_palavras (TrieCompacta): a trie compacta que tem todas palavras dos documentos.
-        todos_documentos (set): conjunto das tuplas (seção, número) de todos os documentos.
-
-    Retorna:
-        Conjunto de tuplas (seção, número) de todos os documentos que satisfaçam 
-        a consulta ou None caso a consulta seja inválida.
-    """
-    try:
-        parser = ArvoreParsing(query)
-        arvore = parser.gera_parsing_tokens()
-        parser.imprimir_debug()
-
-        if arvore_eh_valida(arvore):
-            documentos = processa_arvore_parsing(arvore, trie_palavras, todos_documentos)
-            return documentos, arvore
-
-        else:
-            print("ERRO: Árvore de parsing inválida.")
-            return set(), None
-        
-    except ValueError as e:
-        print("ERRO de parsing: ", e)
-        return set(), None
-
-def _coletar_termos_query(no: 'NoParsing', termos: set = None):
-    """
-    Percorre a Árvore de Parsing recursivamente, coletando todos os nós que
-    representam palavras (termos) e ignorando os nós que representam operadores (AND, OR, NOT).
-    
-    Parâmetros:
-        no (NoParsing): O nó atual a ser processado (começando pela raiz).
-        termos (set): O conjunto acumulador de termos únicos.
-        
-    Retorna:
-        Um set de strings contendo todos os termos únicos da consulta.
-    """
-    if termos is None:
-        termos = set()
-        
-    if no is None:
-        return termos
-        
-    # Verifica se o nó é uma palavra 
-    if no.operador not in ("AND", "OR", "NOT"):
-        termos.add(no.operador)
-        return termos
-    
-    # Processa o filho da esquerda (para AND e OR)
-    _coletar_termos_query(no.esquerda, termos)
-    
-    # Processa o filho da direita (para AND, OR e NOT)
-    _coletar_termos_query(no.direita, termos)
-    
-    return termos
     
 class GerenciadorDeBusca:
     """ Coordena a consulta de forma completa (parsing, busca booleana, cálculo de relevância e formatação)."""
@@ -443,18 +305,152 @@ class GerenciadorDeBusca:
         self.estatisticas_corpus = estatisticas_corpus # Dicionário com estatísticas para o cálculo do z-score
         self.mapa_categorias = {c.value: c.name for c in Categoria} # Usado para formatar o doc_id na saída
 
+    def _tem_no_invalido(self, no):
+        """
+        Verifica recursivamente se um no é inválido, ou seja, se algum
+        de seus filhos é None.
+        
+        Parâmetros:
+            no (NoParsing): o nó a ser verificado.
+
+        Retorna:
+            True se for inválido, False caso contrário.
+        """
+        if no is None:
+            return True
+        
+        if no.operador in ("AND", "OR"):
+            return self._tem_no_invalido(no.esquerda) or self._tem_no_invalido(no.direita)
+        
+        if no.operador == "NOT":
+            return self._tem_no_invalido(no.direita)
+        
+        return False
+
+    def _arvore_eh_valida(self, arvore):
+        """
+        Verifica se uma árvore é válida, isto é, sem raiz nula e sem
+        nós inválidos.
+        
+        Parâmetros:
+            arvore (NoParsing): a árvore a ser verificada.
+
+        Retorna:
+            True se for válida, ou False caso contrário.
+        """
+        if arvore is None:
+            return False
+        
+        else: 
+            return not self._tem_no_invalido(arvore)
+    
+    def _processa_arvore_parsing(self, no : NoParsing):
+        """
+        Processa uma árvore de Parsing recursivamente, aplicando operações booleanas sobre os 
+        termos dos documentos armazenados em uma Trie Compacta.
+        
+        Parâmetros:
+            no (NoParsing): o nó que será processado.
+            trie_palavras (TrieCompacta): a trie que armazena todas palavras de todos os arquivos.
+            todos_documentos (set): todas tuplas (seção, número) dos arquivos.
+        
+        Retorna:
+            Um set com todos os arquivos que satisfazem a consulta.
+        """
+        if no is None:
+            return set()
+        
+        if no.operador == "AND":
+            return (self._processa_arvore_parsing(no.esquerda) 
+                    & self._processa_arvore_parsing(no.direita))
+        
+        elif no.operador == "OR":
+            return (self._processa_arvore_parsing(no.esquerda)
+                    | self._processa_arvore_parsing(no.direita))
+
+        elif no.operador == "NOT":
+            return self.todos_documentos - (self._processa_arvore_parsing(no.direita))
+        
+        else:
+            palavra = no.operador
+            lista_invertida_palavra = self.trie.busca_palavra(palavra)
+            return set(lista_invertida_palavra.keys()) if lista_invertida_palavra else set()
+
+    def _coletar_termos_query(self, no: 'NoParsing', termos: set = None):
+        """
+        Percorre a Árvore de Parsing recursivamente, coletando todos os nós que
+        representam palavras (termos) e ignorando os nós que representam operadores (AND, OR, NOT).
+        
+        Parâmetros:
+            no (NoParsing): O nó atual a ser processado (começando pela raiz).
+            termos (set): O conjunto acumulador de termos únicos.
+            
+        Retorna:
+            Um set de strings contendo todos os termos únicos da consulta.
+        """
+        if termos is None:
+            termos = set()
+            
+        if no is None:
+            return termos
+            
+        # Verifica se o nó é uma palavra 
+        if no.operador not in ("AND", "OR", "NOT"):
+            termos.add(no.operador)
+            return termos
+        
+        # Processa o filho da esquerda (para AND e OR)
+        self._coletar_termos_query(no.esquerda, termos)
+        
+        # Processa o filho da direita (para AND, OR e NOT)
+        self._coletar_termos_query(no.direita, termos)
+        
+        return termos
+
+    def _realiza_consulta(self, query):
+        """
+        Realiza uma consulta de uma query em um conjunto de documentos, 
+        por meio de uma trie compacta que armazena todas palavras dos
+        documentos e de uma árvore de parsing que processa a query.
+        
+        Parâmetros:
+            query (str): a consulta a ser realizada.
+            trie_palavras (TrieCompacta): a trie compacta que tem todas palavras dos documentos.
+            todos_documentos (set): conjunto das tuplas (seção, número) de todos os documentos.
+
+        Retorna:
+            Conjunto de tuplas (seção, número) de todos os documentos que satisfaçam 
+            a consulta ou None caso a consulta seja inválida.
+        """
+        try:
+            parser = ArvoreParsing(query)
+            arvore = parser.gera_parsing_tokens()
+            parser.imprimir_debug()
+
+            if self._arvore_eh_valida(arvore):
+                documentos = self._processa_arvore_parsing(arvore)
+                return documentos, arvore
+
+            else:
+                print("ERRO: Árvore de parsing inválida.")
+                return set(), None
+            
+        except ValueError as e:
+            print("ERRO de parsing: ", e)
+            return set(), None
+    
     def executar_busca(self, query_string: str, num_pagina: int = 1, tamanho_pagina: int = 10):
         """ Executa o ciclo completo da RI e retorna os resultados formatados."""
         
         try:
             # Parsing e busca booleana (retorna ids filtrados e a raiz da árvore)
-            documentos_finais_ids, arvore_raiz = realiza_consulta(query_string, self.trie, self.todos_documentos)
+            documentos_finais_ids, arvore_raiz = self._realiza_consulta(query_string)
             
             if not documentos_finais_ids:
                 return []
             
             # Extrai os termos da consulta da árvore
-            lista_todos_os_termos = list(_coletar_termos_query(arvore_raiz))
+            lista_todos_os_termos = list(self._coletar_termos_query(arvore_raiz))
 
             # Calcula z-scores, relevâncias e termo de foco
             resultados = self._preparar_resultados_para_ordenacao(
@@ -481,7 +477,6 @@ class GerenciadorDeBusca:
         except Exception as e:
             traceback.print_exc()
             return [{'id': 'ERRO Interno', 'score': 'N/A', 'snippet': f'Falha inesperada na RI: {e}'}]
-
 
     def _preparar_resultados_para_ordenacao(self, arvore_raiz: NoParsing, doc_ids: set, lista_todos_os_termos: list):
         """ Calcula a relevância e define o termo/posição de destaque."""
