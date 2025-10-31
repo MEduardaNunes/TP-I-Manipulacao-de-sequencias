@@ -195,6 +195,30 @@ button:hover {
     text-align: left;
 }
 
+.arquivo-titulo {
+    font-family: 'DM Sans', sans-serif;
+    margin-top: 0 !important; 
+    margin-bottom: 6px !important; 
+    
+    display: flex;
+    justify-content: space-between; 
+    align-items: center;            
+}
+
+.nome-arquivo {
+    color: #4a0638;
+    font-size: 21px;
+    font-weight: bold !important;
+}
+
+.score-final {
+    font-size: 16px;  
+    color: #3a3a3a;  
+    
+    margin-left: 20px; 
+    flex-shrink: 0;   
+}
+
 .divisor {
     border: 0;
     border-top: 2px solid #4a0638; 
@@ -454,15 +478,15 @@ a.resultado-link:hover .resultado-item {
 }
 
 .seta-paginacao {
-    width: 37px;   /* aumento sutil e proporcional */
+    width: 37px;   
     height: auto;
     border-radius: 50%;
 }
 
 .pagina-atual-texto {
-    font-size: 20px;   /* tamanho levemente maior */
-    font-weight: 600;  /* mantém legível e equilibrado */
-    color: #4a0638;    /* mesma cor do tema */
+    font-size: 20px;   
+    font-weight: 600;  
+    color: #4a0638;   
 }
 
 input[type="text"] {
@@ -471,12 +495,11 @@ input[type="text"] {
     font-size: 16px;
     border-radius: 5px;
     border: 1px solid #ccc;
-    width: 300px;  /* Tamanho padrão */
-    transition: width 0.3s ease;  /* Transição suave */
+    width: 300px;  
+    transition: width 0.3s ease;  
 }
 
-/* Campo de busca na página de resultados */
 body.pagina-resultados input[type="text"] {
-    width: 60%;  /* Ajuste proporcional com base na largura da tela */
-    max-width: 600px;  /* Limita o tamanho máximo */
+    width: 60%;  
+    max-width: 600px; 
 }

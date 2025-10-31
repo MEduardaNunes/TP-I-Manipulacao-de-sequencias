@@ -48,8 +48,13 @@
                     <a href="{{ url_for('exibir_documento', categoria=resultado.categoria, id_documento=resultado.id_num) }}" class="resultado-link">
                         <div class="resultado-item">
                             <p class="arquivo-titulo"> 
-                                {{ resultado.id_completo }}
+                            
+                                <span class="nome-arquivo">{{ resultado.id_completo }}</span>
+                            
+                                <span class="score-final">Relevância: {{ resultado.score }}</span>
+
                             </p>
+
                             <p class="snippet-texto"> 
                                 {{ resultado.snippet | safe }}
                             </p>
