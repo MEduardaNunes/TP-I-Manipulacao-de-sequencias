@@ -306,10 +306,10 @@ class Corpus:
             print("Dados carregados com sucesso.")
             return True
         except FileNotFoundError:
-            print("Arquivo de 'indice.dat' não encontrado. Um novo será criado.")
+            print("Arquivo de 'indice_trie_estatisticas.dat' não encontrado. Um novo será criado.")
             return False
         except Exception as e:
-            print(f"Erro ao carregar dados de 'indice.dat': {e}")
+            print(f"Erro ao carregar dados de 'indice_trie_estatisticas.dat': {e}")
             return False
     
     def _formatar_estatisticas(self):

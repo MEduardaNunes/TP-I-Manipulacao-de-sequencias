@@ -267,6 +267,11 @@ button:hover {
     padding: 0;
 }
 
+.central p {
+    margin-top: 5px;   
+    margin-bottom: 10px; 
+}
+
 .central ul {
     list-style-type: none; 
     padding: 10px;  
@@ -434,4 +439,44 @@ a.resultado-link:hover .resultado-item {
     padding: 2px 6px;
     border-radius: 4px;
     font-family: monospace;
+}
+
+.paginacao-container {
+    display: flex;
+    align-items: center;   
+    justify-content: center; 
+    gap: 10px;             
+    margin-top: 20px;      
+}
+
+.paginacao-container img {
+    vertical-align: middle; 
+}
+
+.seta-paginacao {
+    width: 37px;   /* aumento sutil e proporcional */
+    height: auto;
+    border-radius: 50%;
+}
+
+.pagina-atual-texto {
+    font-size: 20px;   /* tamanho levemente maior */
+    font-weight: 600;  /* mantém legível e equilibrado */
+    color: #4a0638;    /* mesma cor do tema */
+}
+
+input[type="text"] {
+    font-family: 'DM Sans', sans-serif;
+    padding: 10px;
+    font-size: 16px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    width: 300px;  /* Tamanho padrão */
+    transition: width 0.3s ease;  /* Transição suave */
+}
+
+/* Campo de busca na página de resultados */
+body.pagina-resultados input[type="text"] {
+    width: 60%;  /* Ajuste proporcional com base na largura da tela */
+    max-width: 600px;  /* Limita o tamanho máximo */
 }

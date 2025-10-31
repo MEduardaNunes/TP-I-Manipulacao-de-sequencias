@@ -19,7 +19,7 @@ def inicializar_indice():
     Inicializa as variáveis globais que a aplicação usará.
     """
     global corpus_index, caminho_corpus, mapa_categorias_reverso, gerenciador_de_busca
-    caminho_indice_salvo = "data/indice.dat" 
+    caminho_indice_salvo = "data/indice_trie_estatisticas.dat" 
     caminho_relativo = './bbc'
     
     # Define o caminho absoluto para o corpus
