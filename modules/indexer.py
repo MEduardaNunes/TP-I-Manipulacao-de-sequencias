@@ -10,11 +10,13 @@ def ler_documentos(caminho_corpus):
         
         for categoria in os.listdir(caminho_corpus):
             caminho_categoria = os.path.join(caminho_corpus, categoria)
+            
             if os.path.isdir(caminho_categoria):
                 for nome_arquivo in os.listdir(caminho_categoria):
                     if nome_arquivo.endswith('.txt'):
                         doc_id_num = nome_arquivo[:-4]
                         caminho_arquivo = os.path.join(caminho_categoria, nome_arquivo)
+                        
                         try:
                             with open(caminho_arquivo, 'r', encoding='latin-1') as f:
                                 conteudo = f.read()
@@ -22,7 +24,7 @@ def ler_documentos(caminho_corpus):
                             documentos.append(doc)
                         except Exception as e:
                             print(f"Erro ao ler o arquivo {caminho_arquivo}: {e}")
-        print(f"[INFO] {len(documentos)} documentos lidos do disco.")
+        
         return documentos
 
 class Corpus:
@@ -54,8 +56,6 @@ class Corpus:
             termos_com_posicao = processar_texto(doc.conteudo)
             
             for termo, indice_char in termos_com_posicao:
-                # Imprime as palavras antes e depois da remoção de pontuação
-                print(f"[DEBUG PROCESSAMENTO] Palavra original: '{termo}'")
                 
                 # Pula pontuações repetidas (ex: "!!", "...")
                 if re.fullmatch(r"([.,!?;:])\1+", termo):
@@ -67,7 +67,6 @@ class Corpus:
                 if not termo: # Pula o termo se ele ficou vazio (ex: era só um ".")
                     continue
                 
-                print(f"[DEBUG PROCESSAMENTO] Palavra processada: '{termo}'")
                 # Preenche o dicionário de frequências do doc atual
                 frequencias_por_doc[doc_id_completo][termo] = frequencias_por_doc[doc_id_completo].get(termo, 0) + 1
                 
@@ -153,9 +152,7 @@ class Corpus:
         """Escapa os delimitadores usados no formato do arquivo."""
         if valor is None:
             return ""
-        
-        #print(f"[DEBUG ESCAPE] Palavra original: '{valor}'")
-        
+    
         valor = str(valor)
         valor = valor.replace('\\', '\\\\')
         valor = valor.replace(':', '\\:')
@@ -164,21 +161,17 @@ class Corpus:
         valor = valor.replace(')', '\\)')
             
         valor = valor.replace("'", "\\'") 
-        #print(f"[DEBUG ESCAPE] Palavra escapada: '{valor}'")
             
         return valor
 
     def _remover_escape(self, valor_escapado):
         """Reverte o escalonamento dos delimitadores."""
-        #print(f"[DEBUG REMOVER ESCAPE] Valor escapado original: '{valor_escapado}'")
         valor = valor_escapado.replace('\\:', ':')
         valor = valor.replace('\\,', ',')
         valor = valor.replace('\\(', '(')
         valor = valor.replace('\\)', ')')
         valor = valor.replace("\\'", "'")      
         valor = valor.replace('\\\\', '\\')
-        
-        #print(f"[DEBUG REMOVER ESCAPE] Valor removido dos escapes: '{valor}'")
             
         return valor
             

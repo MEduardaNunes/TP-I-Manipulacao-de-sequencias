@@ -1,17 +1,12 @@
 import re
 
-def obter_caracteres_validos():
-    """ Define o conjunto de caracteres aceitos como válidos para formar palavras."""
-    return {"#", "@", ";", "[", "]", "{", "}", "_", "+", "=", "*", "/", ":", "~", "^", "<", ">", "|", "\\"}
-
 def _obter_caracteres_internos_palavra():
     """ Define o set de caracteres internos permitidos."""
-    # '.' pode ser interno (e.g.) mas também externo. '-' e "'" são normalmente internos.
-    return frozenset(["'", "-", ".", ":", ",", ";", "$", "%", "£"]) 
+    return frozenset(["'","^","<","|", ">", "~", "_","-","+", "=", "*", ".", ":", ",", ";", "$", "%", "£", "/", "\\", "#"]) 
 
 def _obter_simbolos_indexaveis():
-    """ Define símbolos que devem ser indexados como tokens separados."""
-    return frozenset(["&", "%", ".", "-", ":", "!", "?"])
+    """ Define símbolos que podem ser indexados como tokens separados."""
+    return frozenset(["&","^","|",">", "<", "~", "%", ".", "=","+", "-", ":", "!", "?", "/", "\\", "#", "@", "[", "]", "{", "}"])
     
 def processar_texto(texto):
     """
